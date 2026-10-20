@@ -1,0 +1,541 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b0f14">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Morning Set</title>
+<style>
+:root{--bg:#0b0f14;--card:#131a22;--card2:#1a232e;--line:#263241;--tx:#e8eef4;--mu:#8d9bab;--ac:#6ee7b7;--ac2:#34d399;--rest:#fbbf24;--warn:#f87171}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--tx);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+body{overscroll-behavior:none}
+button{font:inherit;color:inherit;cursor:pointer;border:0}
+.hidden{display:none!important}
+/* top bar */
+#bar{position:fixed;top:0;left:0;right:0;z-index:20;display:flex;align-items:center;gap:8px;padding:calc(8px + env(safe-area-inset-top)) 12px 8px;background:rgba(11,15,20,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+@media (max-width:460px){#bar .brand{display:none}}
+#bar{justify-content:flex-end}
+#bar .brand{font-weight:700;letter-spacing:.3px;font-size:15px;color:var(--mu);margin-right:auto;white-space:nowrap}
+.tog{display:flex;align-items:center;gap:6px;height:44px;padding:0 14px;border-radius:22px;background:var(--card2);border:1px solid var(--line);font-size:15px;font-weight:600;white-space:nowrap}
+.tog.on{background:rgba(110,231,183,.14);border-color:var(--ac);color:var(--ac)}
+.tog .ic{font-size:18px}
+#vol{width:80px;flex:1;max-width:140px;min-width:60px;accent-color:var(--ac);height:32px}
+.screen{padding:calc(70px + env(safe-area-inset-top)) 16px calc(20px + env(safe-area-inset-bottom));max-width:820px;margin:0 auto}
+/* start */
+h1{font-size:30px;margin:6px 0 2px}
+.sub{color:var(--mu);font-size:16px;margin:0 0 14px}
+.days{display:flex;gap:6px;margin:0 0 14px;overflow-x:auto}
+.day{flex:1;min-width:44px;height:48px;border-radius:12px;background:var(--card);border:1px solid var(--line);font-weight:600;font-size:14px;color:var(--mu)}
+.day.today{color:var(--tx)}
+.day.sel{background:var(--ac);color:#062b1e;border-color:var(--ac)}
+.seg{display:flex;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:4px;gap:4px;margin-bottom:14px}
+.seg button{flex:1;height:64px;border-radius:12px;background:transparent;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.seg button b{font-size:22px}.seg button span{font-size:12px;color:var(--mu)}
+.seg button.sel{background:var(--card2);box-shadow:inset 0 0 0 2px var(--ac)}
+.streak{display:flex;gap:10px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 14px;margin-bottom:14px;font-size:15px}
+.streak b{font-size:20px;color:var(--rest)}
+.list{list-style:none;margin:0 0 120px;padding:0;display:flex;flex-direction:column;gap:8px}
+.list li{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:8px 12px}
+.list svg{width:64px;height:48px;flex:none}
+.list .nm{font-weight:600;font-size:16px}.list .mt{color:var(--mu);font-size:13px}
+.list .no{color:var(--mu);font-size:13px;width:18px;text-align:right;flex:none}
+#goWrap{position:fixed;left:0;right:0;bottom:0;padding:12px 16px calc(14px + env(safe-area-inset-bottom));background:linear-gradient(transparent,var(--bg) 35%);z-index:10}
+#go{display:block;width:100%;max-width:788px;margin:0 auto;height:76px;border-radius:38px;background:var(--ac);color:#05261a;font-size:30px;font-weight:800;letter-spacing:2px;box-shadow:0 8px 30px rgba(110,231,183,.25)}
+#go small{display:block;font-size:13px;letter-spacing:0;font-weight:600;opacity:.75;margin-top:-4px}
+/* play */
+#play{display:flex;flex-direction:column;gap:8px;height:100vh;height:100dvh;overflow:hidden;padding-bottom:calc(10px + env(safe-area-inset-bottom))}
+#play .info{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:8px}
+.prog{display:flex;gap:3px;height:6px}
+.prog i{flex:1;border-radius:3px;background:var(--line)}
+.prog i.d{background:var(--ac2)}.prog i.c{background:var(--ac)}
+.phase{display:flex;justify-content:space-between;align-items:center;color:var(--mu);font-size:14px;font-weight:600;letter-spacing:.5px;text-transform:uppercase}
+#endBtn{height:40px;padding:0 14px;border-radius:20px;background:var(--card2);border:1px solid var(--line);color:var(--mu);font-size:14px}
+.stage{position:relative;background:radial-gradient(ellipse at 50% 70%,#16212c,#0f151c);border:1px solid var(--line);border-radius:20px;height:27vh;min-height:150px;flex:none}
+.stage svg{width:100%;height:100%;display:block}
+#lead{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:120px;font-weight:800;color:var(--ac);background:rgba(11,15,20,.55);border-radius:20px}
+.stage .view{position:absolute;right:12px;top:8px;font-size:12px;color:var(--mu)}
+#exName{font-size:28px;font-weight:800;margin:0;line-height:1.1}
+#exMeta{color:var(--ac);font-size:17px;font-weight:600;margin-top:4px}
+.row{display:flex;gap:14px;align-items:flex-start}
+.ring{position:relative;width:148px;height:148px;flex:none}
+.ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ring .bgc{stroke:var(--line)}.ring .fgc{stroke:var(--ac);transition:stroke .3s}
+.ring .num{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.ring .num b{font-size:56px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1}
+.ring .num span{font-size:13px;color:var(--mu);margin-top:4px}
+.cues{margin:0;padding-left:20px;font-size:17px;line-height:1.3}
+.cues li{margin-bottom:6px}
+.notes{font-size:14px;color:var(--mu);line-height:1.4}
+.notes b{color:var(--tx)}
+.notes p{margin:4px 0}
+#moti{font-style:italic;color:#c9d6e2;font-size:17px;text-align:center;min-height:24px}
+.next{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:8px 12px}
+.next svg{width:60px;height:45px}
+.next .lb{font-size:12px;color:var(--mu);text-transform:uppercase;letter-spacing:.5px}.next .nm{font-size:17px;font-weight:600}
+.ctrls{display:flex;justify-content:center;align-items:center;gap:22px;flex:none;padding-top:4px}
+.cb{width:72px;height:72px;border-radius:50%;background:var(--card2);border:1px solid var(--line);display:flex;align-items:center;justify-content:center}
+.cb svg{width:32px;height:32px;fill:var(--tx)}
+.cb.big{width:88px;height:88px;background:var(--ac)}.cb.big svg{fill:#05261a;width:40px;height:40px}
+.resting .fgc{stroke:var(--rest)}.resting #exMeta{color:var(--rest)}
+.resting .stage{opacity:.75}
+.paused .ring .num b{opacity:.45}
+@media (orientation:landscape) and (min-width:640px){
+ #play{display:grid;grid-template-columns:1.1fr 1fr;grid-template-rows:auto auto minmax(0,1fr) auto;column-gap:18px;row-gap:8px}
+ #play .prog,#play .phase{grid-column:1/3}
+ #play .stage{grid-row:3/5;height:auto;min-height:0}
+ #play .info{grid-column:2}
+ #play .ctrls{grid-column:2}
+ #exName{font-size:22px}#exMeta{font-size:15px}
+ .ring{width:104px;height:104px}.ring .num b{font-size:38px}.ring .num span{font-size:11px}
+ .cues{font-size:15px}#play .notes,#play .next{display:none}
+ .cb{width:60px;height:60px}.cb.big{width:72px;height:72px}
+}
+/* done */
+#done{text-align:center}
+#done .big{font-size:72px;margin:10px 0 0}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:18px 0}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}
+.stat b{display:block;font-size:28px}.stat span{color:var(--mu);font-size:13px}
+.week{display:flex;justify-content:center;gap:8px;margin:10px 0 18px}
+.week div{width:38px;text-align:center;font-size:12px;color:var(--mu)}
+.week i{display:block;width:30px;height:30px;margin:0 auto 4px;border-radius:50%;background:var(--card2);border:1px solid var(--line)}
+.week i.y{background:var(--ac);border-color:var(--ac)}
+.btn{width:100%;height:68px;border-radius:34px;background:var(--ac);color:#05261a;font-size:24px;font-weight:800}
+.log{margin-top:18px;text-align:left;color:var(--mu);font-size:14px}
+.log div{padding:6px 0;border-bottom:1px solid var(--line)}
+.fig .lim{fill:none;stroke:var(--ac);stroke-width:6;stroke-linecap:round;stroke-linejoin:round}
+.fig .far{opacity:.42}
+.fig .head{fill:var(--ac)}
+.floor{stroke:#2d3a4a;stroke-width:3}
+.prop{fill:#223040;stroke:#34465a;stroke-width:2}
+.wallb{fill:#141d27}
+.mat{fill:#121b25;stroke:#223040;stroke-width:2}
+</style>
+</head>
+<body>
+<header id="bar">
+ <div class="brand">Morning Set</div>
+ <button class="tog" id="musicBtn" aria-label="Music on/off"><span class="ic">♪</span><span id="musicLbl">Music</span></button>
+ <input id="vol" type="range" min="0" max="100" aria-label="Music volume">
+ <button class="tog" id="cueBtn" aria-label="Voice and beep cues on/off"><span class="ic">🔔</span><span id="cueLbl">Cues</span></button>
+</header>
+
+<main id="start" class="screen">
+ <h1 id="sTitle">Today</h1>
+ <p class="sub" id="sSub"></p>
+ <div class="days" id="days"></div>
+ <div class="seg" id="seg"></div>
+ <div class="streak" id="streak"></div>
+ <ul class="list" id="list"></ul>
+ <div id="goWrap"><button id="go">GO<small id="goSub"></small></button></div>
+</main>
+
+<main id="play" class="screen hidden">
+ <div class="prog" id="prog"></div>
+ <div class="phase"><span id="phaseLbl">Get ready</span><span id="countLbl"></span><button id="endBtn">End ✕</button></div>
+ <div class="stage"><svg id="mainFig" viewBox="0 0 200 150" preserveAspectRatio="xMidYMid meet"></svg><div class="view" id="viewLbl"></div><div id="lead" class="hidden">3</div></div>
+ <div class="info">
+  <h2 id="exName"></h2>
+  <div id="exMeta"></div>
+  <div class="row">
+   <div class="ring"><svg viewBox="0 0 100 100"><circle class="bgc" cx="50" cy="50" r="44" fill="none" stroke-width="8"/><circle id="ringFg" class="fgc" cx="50" cy="50" r="44" fill="none" stroke-width="8" stroke-linecap="round" stroke-dasharray="276.46" stroke-dashoffset="0"/></svg><div class="num"><b id="tNum">0</b><span id="tLbl">sec</span></div></div>
+   <div style="flex:1;min-width:0"><ol class="cues" id="cues"></ol></div>
+  </div>
+  <div class="notes" id="notes"></div>
+  <div id="moti"></div>
+  <div class="next" id="nextBox"><svg id="nextFig" viewBox="0 0 200 150"></svg><div><div class="lb">Up next</div><div class="nm" id="nextName"></div></div></div>
+ </div>
+ <div class="ctrls">
+  <button class="cb" id="backBtn" aria-label="Back"><svg viewBox="0 0 24 24"><path d="M6 5h2v14H6zM20 5v14L9 12z"/></svg></button>
+  <button class="cb big" id="pauseBtn" aria-label="Pause"><svg viewBox="0 0 24 24" id="pauseIc"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg></button>
+  <button class="cb" id="skipBtn" aria-label="Skip"><svg viewBox="0 0 24 24"><path d="M16 5h2v14h-2zM4 5v14l11-7z"/></svg></button>
+ </div>
+</main>
+
+<main id="done" class="screen hidden">
+ <div class="big">✓</div>
+ <h1>Session complete</h1>
+ <p class="sub" id="dSub"></p>
+ <div class="stats">
+  <div class="stat"><b id="dStreak">1</b><span>day streak</span></div>
+  <div class="stat"><b id="dTime">0:00</b><span>time moving</span></div>
+ </div>
+ <div class="week" id="dWeek"></div>
+ <p id="dLine" style="color:#c9d6e2;font-style:italic"></p>
+ <button class="btn" id="doneBtn">Done</button>
+ <div class="log" id="dLog"></div>
+</main>
+
+<script>
+(()=>{
+'use strict';
+const $=s=>document.querySelector(s);
+/* ---------- Pose system (stick figures) ---------- */
+// keys: h head, n neck/shoulder, c mid-spine (optional), e/w near elbow/wrist, E/W far elbow/wrist, p pelvis, k/a near knee/ankle, K/A far knee/ankle
+function parse(s){const o={};s.trim().split(/\s+/).forEach(t=>{const [x,y]=t.slice(1).split(',').map(Number);o[t[0]]=[x,y];});return o;}
+function fill(o){[['e','E'],['w','W'],['k','K'],['a','A']].forEach(([l,u])=>{if(!o[u]&&o[l])o[u]=o[l];});return o;}
+function P(s,base){const o=Object.assign({},base?fill(parse(base)):{},parse(s));fill(o);if(!o.c)o.c=[(o.n[0]+o.p[0])/2,(o.n[1]+o.p[1])/2];return o;}
+const QUAD="h142,82 n128,88 p85,100 e129,109 w130,132 k85,132 a57,133";
+const SUP="h34,126 n49,128 p92,129";
+const STAND_F="h100,24 n100,40 p100,84 k94,108 a90,134 K106,108 A110,134";
+
+/* ---------- Exercise library ---------- */
+const EX={
+breath:{name:"Rib-expansion breathing",reps:"slow breaths: 4s in, 6s out",period:10,
+ frames:[P("c70,126 e64,114 w76,120 k113,105 a132,134",SUP),P("c70,118 e60,108 w76,117 k113,105 a132,134",SUP)],
+ cues:["On your back, knees bent, hands on lower ribs","Inhale 4s through the nose: push ribs out sideways into your hands","Exhale 6s slowly and let the ribs drop"],
+ easier:"Sit tall on the couch edge instead.",as:"AS can stiffen the rib joints and reduce chest expansion. Daily rib-expansion breathing is a staple of axSpA programs."},
+catcow:{name:"Cat-cow",reps:"8–10 slow cycles",period:7,
+ frames:[P("c106,106 h142,76",QUAD),P("c106,78 h137,99",QUAD)],
+ cues:["Hands under shoulders, knees under hips","Inhale: chest forward, tailbone up, eyes ahead","Exhale: push the floor away and round gently"],
+ easier:"Seated version on a chair, hands on knees.",note:"Wrists: make fists or come onto forearms if the wrists complain.",as:"Linger in the 'cow' (extension) half. Extension is the direction to protect with AS."},
+thread:{name:"Thread-the-needle",reps:"5–6 per side",sided:1,period:8,
+ frames:[P("E126,64 W124,40 h140,78",QUAD),P("n118,110 c100,104 h127,124 e133,113 w130,132 E104,124 W84,129",QUAD)],
+ cues:["From all fours, reach one arm to the ceiling and watch the hand","Then slide it under your body, shoulder toward the floor","Exhale as you thread, inhale as you open"],
+ easier:"Smaller range: keep your head off the floor.",as:"Mid-back (thoracic) rotation is often the first thing AS stiffens."},
+openbook:{name:"Open books",reps:"6 per side",sided:1,period:8,view:"top",
+ frames:[P("h40,90 n56,90 p104,90 e56,111 w57,132 E60,110 W62,130 k104,117 a130,117 K107,114 A133,114"),P("h42,86 n56,90 p104,90 e56,111 w57,132 E58,69 W58,48 k104,117 a130,117 K107,114 A133,114")],
+ cues:["Lie on your side, knees bent to hip height, arms stacked in front","Sweep the top arm open and rotate your chest to the ceiling","Knees stay together; eyes follow the hand"],
+ easier:"Pillow under your head; stop where it's comfortable.",as:"Unloaded rotation, a safe way to keep the mid-back moving."},
+wallangel:{name:"Wall angels",reps:"8–10 slow reps",period:6,view:"front",props:["wallb"],
+ frames:[P("e78,42 w78,20 E122,42 W122,20",STAND_F),P("e86,22 w94,4 E114,22 W106,4",STAND_F)],
+ cues:["Back to the wall: hips, upper back and head touching (or close)","Arms in a goalpost, slide them up and down slowly","Ribs down; don't arch the low back off the wall"],
+ easier:"Step your feet 30 cm out, or do it lying on the floor.",as:"Also a posture check. Watch your head-to-wall gap shrink over the weeks."},
+lunge:{name:"Hip-flexor lunge + reach",reps:"hold & pulse the reach",sided:1,period:7,
+ frames:[P("h101,50 n100,64 p100,106 e110,84 w120,100 k126,106 a128,134 K80,133 A55,134"),P("h97,50 n98,64 p108,110 e100,42 w102,20 k132,106 a130,134 K82,133 A57,134")],
+ cues:["Half-kneel, back knee on a cushion, squeeze the back glute","Tuck the pelvis slightly and shift hips forward","Reach the back-leg-side arm up and slightly back"],
+ easier:"Hold a couch or wall for balance; skip the reach.",as:"Tight hip flexors pull you into a stoop. This opens the front of the hip and adds gentle extension."},
+ninety:{name:"90/90 hip switches",reps:"8–10 switches",period:8,view:"front",
+ frames:[P("h100,72 n100,86 p100,126 e84,108 w80,130 E116,108 W120,130 k84,106 a76,134 K116,106 A124,134"),
+         P("h100,72 n100,86 p100,126 e84,108 w80,130 E116,108 W120,130 k66,124 a76,134 K92,122 A124,134"),
+         P("h100,72 n100,86 p100,126 e84,108 w80,130 E116,108 W120,130 k84,106 a76,134 K116,106 A124,134"),
+         P("h100,72 n100,86 p100,126 e84,108 w80,130 E116,108 W120,130 k108,122 a76,134 K134,124 A124,134")],
+ cues:["Sit tall, feet wider than hips, hands behind you","Let both knees fall to one side, then lift and switch","Slow and controlled; chest stays lifted"],
+ easier:"Lean back on your hands more and use a smaller range.",as:"Hip rotation is often limited with AS and PsA. Small daily doses help."},
+wgs:{name:"World's greatest stretch",reps:"4–5 per side",sided:1,period:9,
+ frames:[P("h157,74 n145,82 p112,110 e142,108 w138,132 k140,108 a145,134 K86,122 A60,132"),P("h148,64 n140,78 p112,110 e140,106 w138,132 E140,58 W138,36 k140,108 a145,134 K86,122 A60,132")],
+ cues:["Long lunge, both hands inside the front foot","Rotate and reach the inside arm to the ceiling","Back leg long; switch sides at halfway"],
+ easier:"Drop the back knee to the floor.",as:"Hip-flexor opening plus thoracic rotation in one move."},
+bridge:{name:"Glute bridge",reps:"10–15 reps, 2s squeeze at top",period:5,
+ frames:[P("e70,131 w90,132 k114,104 a124,134",SUP),P("n50,126 p92,108 e70,131 w90,132 k116,99 a124,134",SUP)],
+ cues:["Feet flat, hip-width, heels close to your hips","Drive through the heels and squeeze glutes to lift","Ribs down. Lift with the glutes, not by arching the low back"],
+ easier:"Smaller lift range.",harder:"Single-leg bridge, or 3s lowering.",as:"Strong hip extensors support an upright posture."},
+boxsquat:{name:"Squat to couch",reps:"10–15 reps, 3s down",period:5,props:["couchL"],
+ frames:[P("h104,26 n102,40 p100,82 e116,52 w134,54 k102,108 a100,134"),P("h108,54 n98,66 p76,106 e114,72 w132,72 k104,106 a102,134")],
+ cues:["Feet shoulder-width, couch right behind you","Sit back until you lightly touch the couch, then stand tall","Chest proud, knees track over toes"],
+ easier:"Sit fully down, then stand, using hands on knees if needed.",harder:"Hover 2s just above the couch.",as:"Hinge at the hips and keep the spine long. No rounding under load."},
+split:{name:"Split squat",reps:"8–10 per side",sided:1,period:5,
+ frames:[P("h105,28 n104,42 p104,84 e94,62 w102,82 k126,108 a130,134 K88,110 A72,132"),P("h103,50 n102,64 p102,106 e92,84 w100,104 k128,106 a130,134 K90,132 A68,132")],
+ cues:["Long stance, back heel up","Lower straight down until the back knee nearly touches","Front heel planted, torso upright"],
+ easier:"Hold the couch arm or a wall; go shallower.",harder:"3s lowering, 1s pause at the bottom."},
+pushup:{name:"Incline push-up (couch)",reps:"8–12 reps",period:5,props:["couchR"],
+ frames:[P("h115,58 n106,66 p77,96 e113,87 w120,108 k58,115 a40,134"),P("h133,80 n122,86 p86,107 e106,92 w120,108 k63,121 a40,134")],
+ cues:["Hands on the couch edge, body one straight line","Lower your chest to the edge, elbows about 45° from your sides","Press away fully; squeeze the glutes"],
+ easier:"Hands on a wall or kitchen counter.",harder:"Knee push-ups on the floor, on fists.",note:"Wrists: grip the couch edge or use fists to keep wrists straight."},
+plank:{name:"Forearm plank",reps:"hold, steady breathing",period:5,
+ frames:[P("h146,114 n132,118 p88,124 e130,133 w150,133 k64,128 a40,132"),P("h146,114 n132,118 p88,121 e130,133 w150,133 k64,127 a40,132")],
+ cues:["Elbows under shoulders, forearms parallel","Straight line from heels to head, glutes squeezed","Keep breathing. Don't hold your breath"],
+ easier:"Knees down, or forearms on the couch (incline).",note:"Forearms keep the load off your wrists.",as:"Neutral-spine core work, no loaded flexion."},
+deadbug:{name:"Dead bug",reps:"6–8 per side",period:10,
+ frames:[P("e52,106 w54,84 k98,103 a122,103",SUP),P("e52,106 w54,84 E30,120 W10,118 k118,122 a144,122 K98,103 A122,103",SUP),P("e52,106 w54,84 k98,103 a122,103",SUP),P("e30,120 w10,118 E52,106 W54,84 k98,103 a122,103 K118,122 A144,122",SUP)],
+ cues:["On your back, arms to the ceiling, knees over hips","Lower the opposite arm and leg slowly, low back stays down","Exhale as you reach; return and switch"],
+ easier:"Move only the legs, or tap a heel down with the knee bent.",as:"Core strength with a neutral spine. No crunching (loaded flexion)."},
+birddog:{name:"Bird dog",reps:"6–8 per side, 2s hold",period:8,
+ frames:[P("",QUAD),P("E150,86 W172,84 k60,98 a34,96",QUAD),P("",QUAD),P("e150,86 w172,84 K60,98 A34,96",QUAD)],
+ cues:["From all fours, reach opposite arm and leg long","Hips level, like balancing a glass on your low back","Pause 2s, return slowly, switch"],
+ easier:"Lift only an arm, or only a leg.",note:"Wrists: make fists or rest the planted arm on a forearm.",as:"Builds back-extensor endurance without loading the spine."},
+sideplank:{name:"Side plank on knees",reps:"hold each side",sided:1,period:6,view:"front",
+ frames:[P("h52,102 n64,108 p96,126 e62,133 w82,133 E72,118 W90,124 k122,130 a136,118"),P("h52,101 n64,106 p94,116 e62,133 w82,133 E64,84 W64,62 k122,130 a136,118")],
+ cues:["On one forearm, elbow under shoulder, knees bent","Lift hips until shoulders, hips and knees line up","Top hand on hip or reaching up; switch at halfway"],
+ easier:"Just hover the hips, or do it standing, forearm on a wall.",note:"Forearm version, so no wrist load."},
+ytw:{name:"Prone Y-T-W",reps:"3s each letter",period:9,view:"top",
+ frames:[P("h100,30 n100,44 p100,88 k95,112 a93,136 K105,112 A107,136 e88,24 w78,6 E112,24 W122,6"),P("h100,30 n100,44 p100,88 k95,112 a93,136 K105,112 A107,136 e78,44 w56,44 E122,44 W144,44"),P("h100,30 n100,44 p100,88 k95,112 a93,136 K105,112 A107,136 e80,58 w74,40 E120,58 W126,40")],
+ cues:["Face down, forehead on a towel, thumbs up","Lift arms into a Y, then T, then W, squeezing the shoulder blades","Chest lifts only slightly; neck long"],
+ easier:"Arms only. Chest stays on the floor.",as:"Strengthens the upper-back extensors that resist forward rounding."},
+cobra:{name:"Sphinx / cobra",reps:"hold & breathe",period:7,
+ frames:[P("h146,127 n132,130 c111,130 p90,130 e116,128 w132,134 k64,132 a40,132"),P("h138,98 n124,108 c108,124 p90,130 e122,132 w146,132 k64,132 a40,132")],
+ cues:["Face down, elbows under shoulders","Press forearms down, lift the chest, shoulders away from ears","Move up to straight arms (cobra) only if it feels good"],
+ easier:"Stay in sphinx with a pillow under your hips.",as:"Extension is the key direction for AS. Build it gradually and never force it."},
+child:{name:"Child's pose",reps:"relax & breathe",period:8,
+ frames:[P("h120,126 n106,120 c86,104 p70,120 e128,124 w150,130 k98,132 a62,133"),P("h120,126 n107,121 c86,100 p70,120 e128,124 w150,130 k98,132 a62,133")],
+ cues:["Knees wide, hips sink toward heels","Walk hands forward, forehead down","Breathe into your back ribs"],
+ easier:"Pillow between calves and thighs, or under your chest.",as:"Gentle, unloaded flexion is fine as a rest position."},
+pec:{name:"Doorway pec stretch",reps:"hold each side",sided:1,period:8,props:["door"],
+ frames:[P("h112,28 n102,42 p104,84 e88,44 w88,22 k112,108 a118,134 K98,108 A94,134"),P("h118,30 n108,44 p106,84 e88,44 w88,22 k113,108 a118,134 K99,108 A94,134")],
+ cues:["Forearm on the door frame, elbow at shoulder height","Step through with the same-side foot until the chest stretches","Ribs down, and no pinching in the shoulder"],
+ easier:"Lower the elbow below shoulder height.",as:"Opens the chest and counters a rounded upper back."},
+floss:{name:"Hamstring floss",reps:"10–12 per side",sided:1,period:4,
+ frames:[P("e68,112 w94,114 k100,104 a124,110 K118,130 A144,132",SUP),P("e68,112 w94,114 k100,104 a108,79 K118,130 A144,132",SUP)],
+ cues:["On your back, hold behind one thigh, knee over hip","Straighten the knee and pull toes toward you, then bend and point","Smooth rhythm, not a hard stretch"],
+ easier:"Loop a towel around the foot instead.",note:"Tall frames often have tight hamstrings. Flossing is gentler than long holds."},
+chintuck:{name:"Wall chin tucks",reps:"10 reps, 3s hold",period:5,props:["wall90"],
+ frames:[P("h109,28 n100,42 p98,84 e100,62 w102,82 k100,108 a100,134"),P("h101,26 n98,42 p98,84 e100,62 w102,82 k100,108 a100,134")],
+ cues:["Stand with your back to the wall, heels a few cm away","Draw the chin straight back toward the wall (double chin)","Hold 3s; eyes stay level"],
+ easier:"Seated, back against the couch.",as:"Keeps the neck moving into retraction and trains an upright head position."},
+wallsit:{name:"Wall sit",reps:"hold",period:6,props:["wall70"],
+ frames:[P("h80,48 n78,62 p78,104 e90,82 w102,100 k104,104 a104,134"),P("h80,47 n78,61 p78,104 e90,82 w102,100 k104,104 a104,134")],
+ cues:["Back flat on the wall, slide down toward thighs-parallel","Knees over ankles","Breathe steadily, shoulders relaxed"],
+ easier:"Stay higher, with less knee bend.",as:"Quiet leg strength with your back supported."},
+sidebend:{name:"Standing side reach",reps:"5 slow reaches per side",period:12,view:"front",
+ frames:[P("h100,24 n100,40 e94,20 w98,2 E106,20 W102,2",STAND_F),P("h116,30 n110,43 e118,24 w128,8 E122,28 W130,10",STAND_F),P("h100,24 n100,40 e94,20 w98,2 E106,20 W102,2",STAND_F),P("h84,30 n90,43 e82,24 w72,8 E78,28 W70,10",STAND_F)],
+ cues:["Feet hip-width, arms overhead","Reach up and over to one side, then the other","Feet rooted; don't twist"],
+ easier:"One arm overhead, other hand on hip.",as:"Side-bending is one of the movements tracked in AS check-ups (BASMI). Keep it moving."},
+downdog:{name:"Down dog (or dolphin)",reps:"pedal the heels",period:6,
+ frames:[P("h141,120 n132,110 p100,84 e145,122 w156,134 k83,109 a66,134"),P("h141,120 n132,110 p100,84 e145,122 w156,134 k90,112 a72,128")],
+ cues:["Hands wide, hips up and back","Bend the knees as much as needed to keep a long spine","Slowly pedal the heels"],
+ easier:"Dolphin on forearms, or hands on the couch seat.",note:"Wrists: the forearm (dolphin) version removes wrist load.",as:"Lengthens the spine and hamstrings together."},
+twist:{name:"Supine twist",reps:"hold, switch at halfway",sided:1,sync:1,period:14,view:"top",
+ frames:[P("h100,24 n100,38 p100,82 e78,40 w56,40 E122,40 W144,40 k124,90 a126,116 K122,96 A124,122"),P("h100,24 n100,38 p100,82 e78,40 w56,40 E122,40 W144,40 k76,90 a74,116 K78,96 A76,122")],
+ cues:["On your back, arms out in a T, knees bent","Let both knees drop to one side. Switch at halfway","Shoulders stay heavy on the floor"],
+ easier:"Pillow under the knees on the side you drop to.",as:"Gentle rotation for the low and mid back."},
+figure4:{name:"Figure-4 stretch",reps:"hold each side",sided:1,period:8,
+ frames:[P("e72,110 w96,102 k112,110 a100,102 K100,102 A124,104",SUP),P("e72,108 w94,100 k110,106 a96,100 K97,100 A120,98",SUP)],
+ cues:["On your back, cross one ankle over the opposite knee","Hold behind the bottom thigh and draw it in","Let the top knee relax open"],
+ easier:"Seated on the couch: ankle over knee, lean forward with a long spine.",as:"Opens the deep hip rotators, often tight with SpA."}
+};
+const VIEW={top:"view from above",front:"front view",side:"side view"};
+
+/* ---------- Sessions (Mon..Sun) ---------- */
+const DAYS=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+const SESS=[
+{t:"Mobility + Push",
+ 5:[["breath",40,5],["catcow",45,5],["openbook",50,5],["wallangel",40,10],["pushup",40,10],["pec",40,0]],
+ 10:[["breath",45,5],["catcow",50,5],["thread",60,5],["openbook",60,5],["wallangel",45,10],["pushup",45,20],["ytw",45,15],["pushup",45,15],["pec",60,5],["child",40,0]],
+ 15:[["breath",60,5],["catcow",60,5],["thread",60,5],["wgs",60,5],["openbook",60,5],["wallangel",50,10],["chintuck",40,10],["pushup",45,20],["ytw",50,15],["pushup",45,20],["sideplank",50,15],["cobra",40,10],["pec",60,5],["child",45,0]]},
+{t:"Hips + Legs",
+ 5:[["catcow",40,5],["lunge",40,5],["ninety",50,5],["boxsquat",45,15],["bridge",45,10],["figure4",40,0]],
+ 10:[["catcow",45,5],["lunge",60,5],["ninety",60,5],["wgs",60,10],["boxsquat",45,20],["split",60,20],["bridge",45,15],["floss",60,5],["figure4",60,0]],
+ 15:[["catcow",45,5],["lunge",60,5],["ninety",60,5],["wgs",60,10],["boxsquat",50,20],["split",60,20],["boxsquat",50,20],["split",60,15],["wallsit",40,15],["bridge",50,15],["floss",60,5],["figure4",60,5],["breath",45,0]]},
+{t:"Spine + Core",
+ 5:[["breath",40,5],["catcow",45,5],["birddog",50,10],["deadbug",45,10],["cobra",40,5],["child",40,0]],
+ 10:[["breath",45,5],["catcow",45,5],["thread",60,5],["birddog",60,15],["deadbug",45,15],["sideplank",50,15],["cobra",45,5],["plank",30,15],["sidebend",50,5],["child",45,0]],
+ 15:[["breath",60,5],["catcow",50,5],["chintuck",40,10],["thread",60,5],["openbook",60,5],["birddog",60,15],["deadbug",45,15],["sideplank",50,15],["ytw",45,15],["plank",30,15],["deadbug",45,15],["cobra",45,5],["sidebend",50,5],["child",50,0]]},
+{t:"Full-Body Flow",
+ 5:[["catcow",40,5],["wgs",60,5],["boxsquat",40,10],["pushup",40,10],["birddog",45,5],["child",40,0]],
+ 10:[["breath",40,5],["catcow",45,5],["wgs",60,5],["lunge",50,5],["boxsquat",45,15],["pushup",45,15],["birddog",50,10],["bridge",45,10],["openbook",60,5],["child",40,0]],
+ 15:[["breath",45,5],["catcow",45,5],["thread",60,5],["wgs",60,5],["lunge",60,5],["ninety",50,5],["boxsquat",45,15],["pushup",45,15],["split",60,15],["birddog",50,10],["bridge",45,10],["sidebend",50,5],["openbook",60,5],["child",45,0]]},
+{t:"Strength Focus",
+ 5:[["catcow",30,5],["boxsquat",45,15],["pushup",40,15],["split",50,15],["plank",30,10],["bridge",40,0]],
+ 10:[["catcow",40,5],["wgs",50,10],["boxsquat",45,20],["pushup",45,20],["split",60,20],["ytw",45,15],["plank",30,15],["bridge",45,15],["pushup",40,15],["pec",40,0]],
+ 15:[["catcow",45,5],["wgs",60,10],["boxsquat",45,20],["pushup",45,20],["split",60,20],["ytw",45,15],["wallsit",45,15],["plank",30,15],["sideplank",50,15],["bridge",45,15],["boxsquat",45,20],["pushup",40,20],["deadbug",45,10],["pec",50,0]]},
+{t:"Flexibility / Yoga Flow",
+ 5:[["breath",40,5],["catcow",40,5],["downdog",40,5],["lunge",50,5],["cobra",40,5],["child",40,0]],
+ 10:[["breath",45,5],["catcow",45,5],["downdog",45,5],["wgs",60,5],["lunge",60,5],["ninety",50,5],["cobra",40,5],["sidebend",50,5],["floss",60,5],["figure4",40,5],["child",45,0]],
+ 15:[["breath",45,5],["catcow",50,5],["thread",60,5],["downdog",45,5],["wgs",60,5],["lunge",60,5],["ninety",60,5],["cobra",45,5],["sidebend",50,5],["openbook",60,5],["floss",60,5],["figure4",60,5],["pec",45,5],["child",60,0]]},
+{t:"Gentle Restore",
+ 5:[["breath",60,5],["catcow",45,5],["openbook",50,5],["twist",50,5],["child",45,0]],
+ 10:[["breath",60,5],["catcow",50,5],["thread",60,5],["openbook",60,5],["twist",60,5],["figure4",60,5],["floss",60,5],["child",60,5],["breath",50,0]],
+ 15:[["breath",75,5],["catcow",60,5],["thread",60,5],["openbook",60,5],["chintuck",40,5],["pec",60,5],["cobra",45,5],["twist",60,5],["figure4",60,5],["floss",60,5],["ninety",50,5],["child",60,5],["breath",60,0]]}
+];
+const LEN={5:"Quick",10:"Standard",15:"Full"};
+const LEAD=3;
+const MOTI=["Slow is smooth. Smooth is strong.","Breathe low and wide.","Quality reps beat fast reps.","Stay tall. Long spine.","Find the edge of the stretch, not the pain.","Easy on the joints, honest on the effort.","Five minutes counts. Ten is a bonus.","Steady breath, steady mind.","Own the position before adding range.","Relax the jaw. Keep moving.","Consistency beats intensity.","Control the way down.","You're building a body that moves well at 80.","Every morning you show up, it compounds.","Smooth reps. No rush.","Let the exhale do the work.","Strong and supple, one rep at a time.","This is the work that makes the rest of the day easier."];
+const RESTL=["Shake it out.","Easy breath. Next one's coming.","Loosen the shoulders.","Nice. Reset your posture."];
+const DONEL=["That's the day's deposit made.","Spine moved, muscles woke up, done before breakfast.","Small sessions, big compounding.","Good work. Carry that posture into the day."];
+
+/* ---------- Storage ---------- */
+const LS={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+const set=Object.assign({music:true,vol:55,cues:true,len:10},LS.get("vm.settings",{}));
+const save=()=>LS.set("vm.settings",set);
+const pad=n=>String(n).padStart(2,"0");
+const ymd=d=>d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+function getLog(){return LS.get("vm.log",[])}
+function streak(){const s=new Set(getLog().map(x=>x.date));const d=new Date();if(!s.has(ymd(d)))d.setDate(d.getDate()-1);let n=0;while(s.has(ymd(d))){n++;d.setDate(d.getDate()-1);}return n;}
+const fmt=s=>{s=Math.max(0,Math.round(s));return Math.floor(s/60)+":"+pad(s%60)};
+
+/* ---------- Figures ---------- */
+const NS="http://www.w3.org/2000/svg";
+function propsSVG(ex){let s="";const v=ex.view||"side";
+ if(v==="top")s+='<rect x="28" y="2" width="144" height="146" rx="12" class="mat"/>';
+ (ex.props||[]).forEach(p=>{
+  if(p==="wallb")s+='<rect x="38" y="0" width="124" height="136" rx="4" class="wallb"/>';
+  if(p==="couchL")s+='<rect x="30" y="108" width="50" height="27" rx="5" class="prop"/><rect x="24" y="78" width="12" height="57" rx="5" class="prop"/>';
+  if(p==="couchR")s+='<rect x="108" y="109" width="70" height="26" rx="5" class="prop"/><rect x="172" y="78" width="12" height="57" rx="5" class="prop"/>';
+  if(p==="door")s+='<rect x="77" y="2" width="8" height="134" rx="2" class="prop"/>';
+  if(p==="wall90")s+='<rect x="84" y="0" width="6" height="136" class="prop"/>';
+  if(p==="wall70")s+='<rect x="62" y="0" width="6" height="136" class="prop"/>';
+ });
+ if(v!=="top")s+='<line x1="4" y1="136" x2="196" y2="136" class="floor"/>';
+ return s;}
+function buildFig(svg,ex){
+ svg.innerHTML=propsSVG(ex)+'<g class="fig"><polyline class="lim far" data-k="nEW"/><polyline class="lim far" data-k="pKA"/><path class="lim t"/><line class="lim nk"/><polyline class="lim" data-k="pka"/><polyline class="lim" data-k="new"/><circle class="head" r="9"/></g>';
+ svg._ex=ex;svg._pl=[...svg.querySelectorAll("polyline")];svg._t=svg.querySelector("path.t");svg._nk=svg.querySelector("line.nk");svg._hd=svg.querySelector("circle");
+ drawPose(svg,ex.frames[0]);}
+function drawPose(svg,o){
+ svg._pl.forEach(pl=>pl.setAttribute("points",[...pl.dataset.k].map(k=>o[k][0].toFixed(1)+","+o[k][1].toFixed(1)).join(" ")));
+ const p=o.p,n=o.n,c=o.c,cx=2*c[0]-(p[0]+n[0])/2,cy=2*c[1]-(p[1]+n[1])/2;
+ svg._t.setAttribute("d",`M${p[0].toFixed(1)} ${p[1].toFixed(1)} Q${cx.toFixed(1)} ${cy.toFixed(1)} ${n[0].toFixed(1)} ${n[1].toFixed(1)}`);
+ const h=o.h,dx=n[0]-h[0],dy=n[1]-h[1],L=Math.hypot(dx,dy)||1;
+ svg._nk.setAttribute("x1",n[0]);svg._nk.setAttribute("y1",n[1]);svg._nk.setAttribute("x2",h[0]+dx/L*8);svg._nk.setAttribute("y2",h[1]+dy/L*8);
+ svg._hd.setAttribute("cx",h[0]);svg._hd.setAttribute("cy",h[1]);}
+const KEYS=["h","n","c","e","w","E","W","p","k","a","K","A"];
+function mix(A,B,u){const o={};KEYS.forEach(k=>{o[k]=[A[k][0]+(B[k][0]-A[k][0])*u,A[k][1]+(B[k][1]-A[k][1])*u]});return o;}
+const ease=u=>{u=Math.min(1,Math.max(0,(u-.18)/.64));return .5-.5*Math.cos(Math.PI*u)};
+function poseAt(ex,t,frac){const f=ex.frames;if(f.length<2)return f[0];
+ if(ex.sync&&frac!=null){return mix(f[0],f[1],Math.min(1,Math.max(0,(frac-.46)/.08)));}
+ const per=ex.period*1000,ph=((t%per)/per)*f.length,i=Math.floor(ph);return mix(f[i],f[(i+1)%f.length],ease(ph-i));}
+
+/* ---------- Audio: beeps + procedural music ---------- */
+let ctx=null,beepG=null,musicG=null,duckG=null;
+function ensureAudio(){
+ if(ctx){if(ctx.state==="suspended")ctx.resume();return;}
+ const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
+ ctx=new AC();
+ const comp=ctx.createDynamicsCompressor();comp.threshold.value=-14;comp.ratio.value=4;comp.connect(ctx.destination);
+ beepG=ctx.createGain();beepG.gain.value=.5;beepG.connect(ctx.destination);
+ duckG=ctx.createGain();duckG.connect(comp);
+ musicG=ctx.createGain();musicG.gain.value=0;musicG.connect(duckG);
+ Music.init();
+}
+function beep(f=660,d=.12,v=.35,t0=0){if(!ctx||!set.cues)return;const t=ctx.currentTime+t0,o=ctx.createOscillator(),g=ctx.createGain();o.type="sine";o.frequency.value=f;g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(v,t+.01);g.gain.exponentialRampToValueAtTime(0.0001,t+d);o.connect(g);g.connect(beepG);o.start(t);o.stop(t+d+.05);}
+const chime=()=>{beep(784,.25,.3);beep(988,.25,.3,.16);beep(1319,.45,.28,.32)};
+const mtof=m=>440*Math.pow(2,(m-69)/12);
+const BPM=116,SP=60/BPM/4;
+const CH=[{r:41,n:[57,60,64,67]},{r:40,n:[55,59,62,64]},{r:38,n:[53,57,60,64]},{r:36,n:[52,55,59,62]}];
+const MEL=[[[0,81],[6,79],[10,76]],[[0,79],[4,76],[10,74],[14,76]],[[2,74],[6,72],[10,74],[12,76]],[[0,72],[8,67],[14,69]]];
+const Music={on:false,timer:null,init(){
+ const c=ctx;this.noise=c.createBuffer(1,c.sampleRate,c.sampleRate);const d=this.noise.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
+ this.bus=c.createBiquadFilter();this.bus.type="lowpass";this.bus.frequency.value=7000;this.bus.connect(musicG);
+ const L=Math.floor(c.sampleRate*2.2),ir=c.createBuffer(2,L,c.sampleRate);for(let ch=0;ch<2;ch++){const x=ir.getChannelData(ch);for(let i=0;i<L;i++)x[i]=(Math.random()*2-1)*Math.pow(1-i/L,3);}
+ this.rev=c.createConvolver();this.rev.buffer=ir;const rg=c.createGain();rg.gain.value=.3;this.rev.connect(rg);rg.connect(this.bus);
+ this.dl=c.createDelay(1);this.dl.delayTime.value=SP*3;const fb=c.createGain();fb.gain.value=.3;const dg=c.createGain();dg.gain.value=.35;this.dl.connect(fb);fb.connect(this.dl);this.dl.connect(dg);dg.connect(this.bus);
+},
+level(){return .55*(set.vol/100)},
+start(){if(!ctx||this.on)return;this.on=true;clearInterval(this.timer);this.step=0;this.nt=ctx.currentTime+.08;const g=musicG.gain,t=ctx.currentTime;g.cancelScheduledValues(t);g.setValueAtTime(g.value,t);g.linearRampToValueAtTime(this.level(),t+1.5);this.timer=setInterval(()=>this.sched(),25);},
+stop(){if(!ctx||!this.on)return;this.on=false;const g=musicG.gain,t=ctx.currentTime;g.cancelScheduledValues(t);g.setValueAtTime(g.value,t);g.linearRampToValueAtTime(0,t+.6);setTimeout(()=>{if(!this.on)clearInterval(this.timer)},700);},
+setVol(){if(ctx&&this.on){const t=ctx.currentTime;musicG.gain.cancelScheduledValues(t);musicG.gain.setTargetAtTime(this.level(),t,.05);}},
+sched(){while(this.nt<ctx.currentTime+.15){this.play(this.step,this.nt);this.step++;this.nt+=SP;}},
+env(g,t,v,a,d){g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(v,t+a);g.gain.exponentialRampToValueAtTime(0.0001,t+d);},
+nz(t,type,f,q,v,d,send){const c=ctx,s=c.createBufferSource();s.buffer=this.noise;const fl=c.createBiquadFilter();fl.type=type;fl.frequency.value=f;fl.Q.value=q;const g=c.createGain();this.env(g,t,v,.003,d);s.connect(fl);fl.connect(g);g.connect(this.bus);if(send)g.connect(this.rev);s.start(t,Math.random()*.5);s.stop(t+d+.05);},
+osc(t,type,f,v,a,d,dest,det){const o=ctx.createOscillator(),g=ctx.createGain();o.type=type;o.frequency.value=f;if(det)o.detune.value=det;this.env(g,t,v,a,d);o.connect(g);g.connect(dest);o.start(t);o.stop(t+d+.05);return g;},
+play(s,t){const st=s%16,bar=Math.floor(s/16),ch=CH[bar%4],c=ctx;if(st%2)t+=SP*.12;
+ const drums=bar%16>=2;
+ if(drums&&st%4===0){const o=c.createOscillator(),g=c.createGain();o.frequency.setValueAtTime(140,t);o.frequency.exponentialRampToValueAtTime(45,t+.12);this.env(g,t,.75,.004,.38);o.connect(g);g.connect(this.bus);o.start(t);o.stop(t+.45);}
+ if(drums&&(st===4||st===12))this.nz(t,"bandpass",1700,.8,.28,.18,true);
+ if(st%4===2)this.nz(t,"highpass",7500,.7,.11,.06);else if(drums&&st%2===1)this.nz(t,"highpass",8500,.7,.035,.03);
+ if(bar>=1&&st%4===2){const m=ch.r+(st===14?7:0),lp=c.createBiquadFilter();lp.type="lowpass";lp.frequency.value=650;lp.connect(this.bus);this.osc(t,"triangle",mtof(m+12),.22,.006,.24,lp);this.osc(t,"sine",mtof(m+12),.25,.006,.26,lp);}
+ if(st===0||st===6||st===10){const lp=c.createBiquadFilter();lp.type="lowpass";lp.frequency.value=st===0?2400:1700;lp.connect(this.bus);lp.connect(this.rev);ch.n.forEach(m=>{this.osc(t,"triangle",mtof(m),st===0?.05:.035,.008,st===0?.8:.35,lp,-6);this.osc(t,"sine",mtof(m),.03,.008,st===0?.8:.35,lp,6);});}
+ if(st===0)ch.n.forEach(m=>{const o=c.createOscillator(),g=c.createGain();o.type="sine";o.frequency.value=mtof(m);g.gain.setValueAtTime(0.0001,t);g.gain.linearRampToValueAtTime(.014,t+.5);g.gain.linearRampToValueAtTime(0.0001,t+SP*16);o.connect(g);g.connect(this.bus);g.connect(this.rev);o.start(t);o.stop(t+SP*16+.05);});
+ if(Math.floor(bar/4)%2===1)MEL[bar%4].forEach(([ss,m])=>{if(ss===st){const g=this.osc(t,"sine",mtof(m),.07,.005,.4,this.bus);g.connect(this.dl);g.connect(this.rev);this.osc(t,"triangle",mtof(m),.015,.005,.25,this.bus);}});
+}};
+/* speech */
+let voice=null;
+function pickVoice(){if(!("speechSynthesis" in window))return;const v=speechSynthesis.getVoices();voice=v.find(x=>/en-US/i.test(x.lang)&&/Samantha|Google US|Aria|Jenny|Natural/i.test(x.name))||v.find(x=>/^en/i.test(x.lang))||null;}
+if("speechSynthesis" in window){pickVoice();speechSynthesis.onvoiceschanged=pickVoice;}
+function say(txt){if(!set.cues||!("speechSynthesis" in window))return;try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(txt);if(voice)u.voice=voice;u.rate=1;u.pitch=1;u.volume=1;
+ u.onstart=()=>{if(duckG)duckG.gain.setTargetAtTime(.45,ctx.currentTime,.08)};u.onend=u.onerror=()=>{if(duckG)duckG.gain.setTargetAtTime(1,ctx.currentTime,.3)};speechSynthesis.speak(u);}catch(e){}}
+
+/* ---------- Wake lock ---------- */
+let wl=null;
+async function wake(){try{if("wakeLock" in navigator&&!wl){wl=await navigator.wakeLock.request("screen");wl.addEventListener("release",()=>{wl=null});}}catch(e){}}
+function unwake(){try{wl&&wl.release()}catch(e){}wl=null;}
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&W&&!W.done)wake();});
+
+/* ---------- Top bar ---------- */
+function syncBar(){$("#musicBtn").classList.toggle("on",set.music);$("#musicLbl").textContent=set.music?"On":"Off";
+ $("#cueBtn").classList.toggle("on",set.cues);$("#cueLbl").textContent=set.cues?"On":"Off";$("#vol").value=set.vol;}
+$("#musicBtn").onclick=()=>{set.music=!set.music;save();syncBar();if(W&&!W.done){ensureAudio();set.music?Music.start():Music.stop();}else if(!set.music)Music.stop();};
+$("#cueBtn").onclick=()=>{set.cues=!set.cues;save();syncBar();if(!set.cues&&"speechSynthesis" in window)speechSynthesis.cancel();};
+$("#vol").oninput=e=>{set.vol=+e.target.value;save();Music.setVol();};
+
+/* ---------- Start screen ---------- */
+const q=new URLSearchParams(location.search);
+const todayIdx=(new Date().getDay()+6)%7;
+let dayIdx=todayIdx;{const d=(q.get("day")||"").slice(0,3).toLowerCase();const i=DAYS.findIndex(x=>x.toLowerCase()===d);if(i>=0)dayIdx=i;}
+if([5,10,15].includes(+q.get("len")))set.len=+q.get("len");
+const items=()=>SESS[dayIdx][set.len].map(([id,work,rest])=>({id,work,rest,ex:EX[id]}));
+const total=it=>it.reduce((s,x)=>s+x.work+x.rest+LEAD,0);
+const metaTxt=x=>`${x.work}s · ${x.ex.reps}${x.ex.sided?" · both sides":""}`;
+function renderStart(){
+ const s=SESS[dayIdx],it=items();
+ $("#sTitle").textContent=(dayIdx===todayIdx?"Today · ":DAYS[dayIdx]+" · ")+s.t;
+ $("#sSub").textContent=new Date().toLocaleDateString(undefined,{weekday:"long",month:"short",day:"numeric"})+" · quiet, no equipment, no jumping";
+ $("#days").innerHTML=DAYS.map((d,i)=>`<button class="day${i===dayIdx?" sel":""}${i===todayIdx?" today":""}" data-i="${i}">${d}</button>`).join("");
+ $("#seg").innerHTML=[5,10,15].map(l=>`<button data-l="${l}" class="${l===set.len?"sel":""}"><b>${l} min</b><span>${LEN[l]} · ${fmt(total(SESS[dayIdx][l].map(([id,w,r])=>({work:w,rest:r}))))}</span></button>`).join("");
+ const st=streak(),log=getLog(),doneToday=log.some(x=>x.date===ymd(new Date()));
+ $("#streak").innerHTML=`<b>🔥 ${st}</b><span>${st===1?"day":"days"} in a row${doneToday?" · done today ✓":st?" · keep it alive today":" · start your streak today"}</span>`;
+ $("#list").innerHTML=it.map((x,i)=>`<li><span class="no">${i+1}</span><svg viewBox="0 0 200 150" data-id="${x.id}"></svg><div><div class="nm">${x.ex.name}</div><div class="mt">${metaTxt(x)}${x.rest?` · rest ${x.rest}s`:""}</div></div></li>`).join("");
+ $("#list").querySelectorAll("svg").forEach(sv=>buildFig(sv,EX[sv.dataset.id]));
+ $("#goSub").textContent=`${LEN[set.len]} · ${it.length} moves · ≈${fmt(total(it))}`;
+}
+$("#days").onclick=e=>{const b=e.target.closest("button");if(b){dayIdx=+b.dataset.i;renderStart();}};
+$("#seg").onclick=e=>{const b=e.target.closest("button");if(b){set.len=+b.dataset.l;save();renderStart();}};
+
+/* ---------- Player ---------- */
+let W=null;const RING=276.46;
+function show(id){["start","play","done"].forEach(s=>$("#"+s).classList.toggle("hidden",s!==id));window.scrollTo(0,0);}
+$("#go").onclick=()=>{ensureAudio();if(set.music)Music.start();wake();
+ if("speechSynthesis" in window&&set.cues){try{speechSynthesis.speak(new SpeechSynthesisUtterance(""))}catch(e){}}
+ W={it:items(),i:0,phase:null,el:0,dur:0,last:performance.now(),paused:false,done:false,moved:0,skipped:0,mi:Math.floor(Math.random()*MOTI.length),startDate:ymd(new Date()),title:DAYS[dayIdx]+" · "+SESS[dayIdx].t,len:set.len};
+ $("#prog").innerHTML=W.it.map(()=>"<i></i>").join("");show("play");enter("lead",0);};
+function enter(ph,i){
+ W.phase=ph;W.i=i;W.el=0;W.last=performance.now();W.lastSec=null;W.half=false;
+ const x=W.it[i],isRest=ph==="rest",showX=isRest?W.it[i+1]:x;
+ W.dur=ph==="lead"?LEAD:ph==="work"?x.work:x.rest;
+ $("#play").classList.toggle("resting",isRest);
+ buildFig($("#mainFig"),showX.ex);$("#viewLbl").textContent=VIEW[showX.ex.view||"side"];
+ $("#phaseLbl").textContent=isRest?"Rest":ph==="lead"?"Get ready":"Work";
+ $("#countLbl").textContent=`${(isRest?i+2:i+1)} / ${W.it.length}`;
+ $("#exName").textContent=isRest?"Rest":showX.ex.name;
+ $("#exMeta").textContent=isRest?`Up next: ${showX.ex.name}`:metaTxt(x);
+ $("#cues").innerHTML=showX.ex.cues.map(c=>`<li>${c}</li>`).join("");
+ const e=showX.ex;$("#notes").innerHTML=(e.easier?`<p><b>Easier:</b> ${e.easier}</p>`:"")+(e.harder?`<p><b>Harder:</b> ${e.harder}</p>`:"")+(e.note?`<p><b>Note:</b> ${e.note}</p>`:"")+(e.as?`<p><b>AS note:</b> ${e.as}</p>`:"");
+ if(ph==="lead"){W.mi=(W.mi+1)%MOTI.length;$("#moti").textContent=MOTI[W.mi];}
+ if(isRest)$("#moti").textContent=RESTL[i%RESTL.length];
+ const nx=isRest?W.it[i+2]:W.it[i+1];
+ $("#nextBox").classList.toggle("hidden",!nx);if(nx){buildFig($("#nextFig"),nx.ex);$("#nextName").textContent=nx.ex.name+` · ${nx.work}s`;}
+ $("#lead").classList.toggle("hidden",ph!=="lead");
+ [...$("#prog").children].forEach((el,j)=>{el.className=j<i||(j===i&&isRest)?"d":j===i?"c":"";});
+ if(ph==="lead"){const last=i===W.it.length-1;say(`${last?"Last one. ":""}${x.ex.name}. ${x.work} seconds${x.ex.sided?", switch sides halfway":""}.`);}
+ if(ph==="work"){beep(990,.18,.4);}
+ if(isRest&&x.rest>=10)say("Rest.");
+ update();}
+function advance(){const last=W.i===W.it.length-1;
+ if(W.phase==="lead")enter("work",W.i);
+ else if(W.phase==="work"){W.moved+=W.el;if(last)finish();else if(W.it[W.i].rest>0)enter("rest",W.i);else enter("lead",W.i+1);}
+ else enter("lead",W.i+1);}
+function update(){const rem=Math.max(0,W.dur-W.el),sec=Math.ceil(rem);
+ $("#tNum").textContent=W.phase==="lead"?sec:(sec>=60?fmt(sec):sec);$("#tNum").style.fontSize=sec>=60&&W.phase!=="lead"?"46px":"";
+ $("#tLbl").textContent=W.paused?"paused":W.phase==="rest"?"rest":W.phase==="lead"?"get ready":"sec";
+ $("#ringFg").setAttribute("stroke-dashoffset",(RING*(W.dur?W.el/W.dur:0)).toFixed(1));
+ if(W.phase==="lead")$("#lead").textContent=sec||"Go";}
+function tick(){if(!W||W.done)return;const now=performance.now();if(W.paused){W.last=now;return;}
+ W.el+=(now-W.last)/1000;W.last=now;const rem=W.dur-W.el,sec=Math.ceil(rem);
+ if(sec!==W.lastSec){if(W.lastSec!==null||W.phase==="lead"){if(W.phase==="lead"&&sec>=1&&sec<=3)beep(660,.12,.3);if(W.phase==="work"&&sec>=1&&sec<=3&&W.dur>8)beep(520,.07,.18);if(W.phase==="rest"&&sec===3)beep(440,.08,.15);}W.lastSec=sec;}
+ if(W.phase==="work"&&W.it[W.i].ex.sided&&!W.half&&W.el>=W.dur/2){W.half=true;beep(740,.1,.3);beep(740,.1,.3,.15);say("Switch sides.");}
+ if(rem<=0){advance();return;}
+ update();}
+setInterval(tick,100);
+$("#pauseBtn").onclick=()=>{if(!W)return;W.paused=!W.paused;$("#play").classList.toggle("paused",W.paused);
+ $("#pauseIc").innerHTML=W.paused?'<path d="M7 4v16l13-8z"/>':'<path d="M6 5h4v14H6zM14 5h4v14h-4z"/>';
+ if(ctx){W.paused?ctx.suspend():ctx.resume();}if(W.paused&&"speechSynthesis" in window)speechSynthesis.cancel();update();};
+function unpause(){if(W.paused){W.paused=false;$("#play").classList.remove("paused");$("#pauseIc").innerHTML='<path d="M6 5h4v14H6zM14 5h4v14h-4z"/>';if(ctx)ctx.resume();}}
+$("#skipBtn").onclick=()=>{if(!W)return;unpause();if(W.phase==="work")W.moved+=W.el;if(W.phase!=="rest")W.skipped++;if(W.phase==="rest"||W.i<W.it.length-1)enter("lead",W.phase==="rest"?W.i+1:W.i+1);else finish();};
+$("#backBtn").onclick=()=>{if(!W)return;unpause();if(W.phase==="rest")enter("lead",W.i);else if(W.phase==="work"&&W.el>3)enter("lead",W.i);else enter("lead",Math.max(0,W.i-1));};
+$("#endBtn").onclick=()=>{if(!W)return;if(!confirm("End this session? (It won't be logged.)"))return;W.done=true;Music.stop();unwake();if("speechSynthesis" in window)speechSynthesis.cancel();if(ctx&&ctx.state==="suspended")ctx.resume();W=null;renderStart();show("start");};
+function finish(){W.done=true;const log=getLog();
+ log.push({date:ymd(new Date()),session:W.title,length:`${LEN[W.len]} (${W.len} min)`,moved:Math.round(W.moved),skipped:W.skipped,at:new Date().toISOString()});LS.set("vm.log",log.slice(-400));
+ const st=streak();$("#dStreak").textContent=st;$("#dTime").textContent=fmt(W.moved);
+ $("#dSub").textContent=`${W.title} · ${LEN[W.len]} (${W.len} min) · logged ✓`;
+ $("#dLine").textContent=DONEL[Math.floor(Math.random()*DONEL.length)];
+ const days=new Set(log.map(x=>x.date));let wk="";for(let k=6;k>=0;k--){const d=new Date();d.setDate(d.getDate()-k);wk+=`<div><i class="${days.has(ymd(d))?"y":""}"></i>${"SMTWTFS"[d.getDay()]}</div>`;}$("#dWeek").innerHTML=wk;
+ $("#dLog").innerHTML="<b style='color:var(--tx)'>Recent</b>"+log.slice(-6).reverse().map(x=>`<div>${x.date} · ${x.session} · ${x.length}</div>`).join("");
+ show("done");chime();say(`Nice work. ${st} day streak.`);unwake();}
+$("#doneBtn").onclick=()=>{Music.stop();W=null;renderStart();show("start");};
+
+/* ---------- Animation loop ---------- */
+let at=0,lt=performance.now();
+function frame(now){const dt=now-lt;lt=now;if(!(W&&W.paused))at+=dt;
+ const m=$("#mainFig");if(m._ex&&!$("#play").classList.contains("hidden")){const frac=W&&W.phase==="work"&&!W.done?W.el/W.dur:(W&&W.phase!=="work"?0:null);drawPose(m,poseAt(m._ex,at,m._ex.sync?frac:null));}
+ requestAnimationFrame(frame);}
+requestAnimationFrame(frame);
+
+window.MS={EX,buildFig,drawPose};
+syncBar();renderStart();
+})();
+</script>
+</body>
+</html>
