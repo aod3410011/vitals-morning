@@ -127,6 +127,8 @@ h1{font-size:30px;margin:6px 0 2px}
 .btn2{height:76px;border-radius:18px;background:var(--card2);border:2px solid var(--ac);color:var(--ac);font-size:18px;font-weight:800;line-height:1.15;padding:6px}
 .btn2 small{display:block;font-size:12px;font-weight:600;color:var(--mu);margin-top:2px}
 .btn2.ab{border-color:var(--rest);color:var(--rest)}
+.btn2.lb{border-color:#93c5fd;color:#93c5fd}
+.addons{grid-template-columns:1fr 1fr 1fr!important}.btn2{height:88px;font-size:16px}
 .addhint{color:var(--mu);font-size:13px;margin:0 0 8px}
 </style>
 </head>
@@ -193,8 +195,9 @@ h1{font-size:30px;margin:6px 0 2px}
  <div class="addons" id="addons">
   <button class="btn2" id="plusBtn">+5 min<small id="plusSub"></small></button>
   <button class="btn2 ab" id="abBtn">5-min Ab Blast<small id="abSub"></small></button>
+  <button class="btn2 lb" id="backBtn2">Low-Back Relief<small id="backSub"></small></button>
  </div>
- <button class="btn" id="doneBtn">Done</button>
+ <button class="btn" id="doneBtn">Done for today</button>
  <div class="log" id="dLog"></div>
 </main>
 
@@ -426,6 +429,29 @@ pallof:{name:"Wall Pallof press (iso)",kind:"c",sided:1,reps:"5s presses, switch
   4:{name:"Wall Pallof press, split stance"},
   5:{name:"Wall Pallof press, half-kneeling, 10s holds",reps:"10s presses",cues:["Half-kneel side-on to the wall","Press out and push sideways into the wall hard for 10s","Hips and ribs don't turn"]}}}
 });
+/* Low-Back Relief moves (kind "r": gentle at every level) */
+const SAFE="Pain-free range only. Stop if pain is sharp or shoots down a leg.";
+Object.assign(EX,{
+ptilt:{name:"Pelvic tilts",kind:"r",reps:"slow, 3s each way",period:6,frames:[P("c70,126 e70,131 w90,132 k113,105 a132,134",SUP),P("p92,127 c70,130 e70,131 w90,132 k112,104 a132,134",SUP)],
+ cues:["On your back, knees bent, feet flat","Exhale: gently flatten the low back into the floor","Inhale: let a small arch return. Tiny, easy movement"],easier:"Smaller movement, or just breathe into the low back.",as:"Gentle lumbar movement without load."},
+k2c1:{name:"Single knee-to-chest",kind:"r",sided:1,reps:"easy hold, switch at halfway",period:8,frames:[P("e62,112 w78,104 k78,106 a98,100 K113,105 A132,134",SUP),P("e60,111 w76,103 k76,104 a96,98 K113,105 A132,134",SUP)],
+ cues:["On your back, other foot flat","Hug one knee gently toward your chest","Relax the shoulders; breathe slowly"],easier:"Hold behind the thigh instead of over the knee."},
+k2c2:{name:"Double knees-to-chest",kind:"r",reps:"easy hold, small rocks",period:8,frames:[P("e62,112 w78,104 k78,106 a98,100",SUP),P("e60,110 w76,102 k76,103 a96,97",SUP)],
+ cues:["Hug both knees in, hands behind the thighs","Rock gently side to side, or just hold","Tailbone stays heavy"],easier:"One knee at a time."},
+catcowslow:{name:"Slow cat-cow",kind:"r",reps:"5 slow cycles",period:12,frames:EX.catcow.frames,cues:["All fours, wrists on fists or forearms if needed","Inhale 5s into cow, exhale 5s into cat","Move only as far as feels easy"],easier:"Seated cat-cow on the couch.",note:"Wrists: fists or forearms."},
+sphinx:{name:"Sphinx / gentle press-up",kind:"r",reps:"long, easy hold",period:10,frames:EX.cobra.frames,cues:["Face down, elbows under shoulders","Let the belly and hips stay heavy as the chest lifts","Only press to straight arms if it feels good"],easier:"Lie flat on the belly with a pillow under the hips.",as:"Gentle extension, the direction AS stiffens most."},
+hfstretch:{name:"Half-kneeling hip-flexor stretch",kind:"r",sided:1,reps:"hold, switch at halfway",period:10,frames:[P("h101,50 n100,64 p100,106 e110,84 w120,100 k126,106 a128,134 K80,133 A55,134"),P("p104,108 k130,106","h101,50 n100,64 p100,106 e110,84 w120,100 k126,106 a128,134 K80,133 A55,134")],
+ cues:["Back knee on a cushion, front foot forward","Tuck the tailbone slightly, squeeze the back glute","Shift forward only until the front of the hip stretches"],easier:"Hold a couch or wall for balance."},
+childside:{name:"Child's pose + side reach",kind:"r",sided:1,reps:"hold, switch at halfway",period:10,view:"top",
+ frames:[P("h100,40 n100,54 p100,96 e92,32 w88,10 E108,32 W112,10 k78,106 a94,100 K122,106 A106,100"),P("h94,40 n97,55 p100,96 e84,36 w70,16 E94,34 W82,12 k78,106 a94,100 K122,106 A106,100")],
+ cues:["Child's pose, knees wide","Walk both hands to one side until the opposite side of your back stretches","Breathe into that side; switch at halfway"],easier:"Pillow under the chest or between calves and thighs."},
+twistknees:{name:"Supine twist, knees together",kind:"r",sided:1,sync:1,reps:"slow breathing, switch at halfway",period:14,view:"top",frames:EX.twist.frames,
+ cues:["Knees bent and pressed together, arms out in a T","Let the knees fall to one side only as far as is comfortable","Breathe slowly: 4s in, 6s out"],easier:"Pillow under the knees."},
+breathsup:{name:"Supported deep breathing",kind:"r",reps:"4s in, 6s out",period:10,props:["couchR"],
+ frames:[P("c70,127 e64,114 w76,120 k104,104 a140,105",SUP),P("c70,119 e60,109 w76,117 k104,104 a140,105",SUP)],
+ cues:["On your back, calves resting on the couch seat","Hands on the lower ribs; breathe into your hands","Long exhales; let the back sink into the floor"],easier:"Pillow under the knees instead of the couch.",as:"Supported position unloads the low back; rib breathing keeps the chest moving."}
+});
+const LOWBACK=[["ptilt",25,0],["k2c1",30,0],["k2c2",25,0],["catcowslow",30,0],["sphinx",30,0],["hfstretch",30,0],["childside",30,0],["figure4",30,0],["twistknees",30,0],["breathsup",30,0]];
 const ABS=[["deadbug",35,10],["hollow",25,10],["taps",30,5],["sidedip",40,10],["birdhold",30,5],["bridgemarch",30,10],["revcrunch",25,5],["pallof",30,0]];
 const BONUS=[
  [["pushup",40,15],["ytw",40,15],["pushup",40,15],["wallangel",40,10],["pec",40,0]],
@@ -443,9 +469,10 @@ const LDESC=["Easiest variations (wall push-ups, sit-to-stands, heel taps), +10s
  "Hardest variations: decline push-ups, single-leg box squats, shoulder taps, 3-1-1 Bulgarians. Half rest, +20% work. Quality reps only."];
 const TEMPO_S=["Tempo: slow and comfortable. Stop well before tired.","Tempo: smooth, 2s down, 2s up.","Tempo: 3s down, 1s up.","Tempo: 3s down, pause, strong up.","Tempo: 3s down, pause, drive up. Near your limit, with clean form."];
 const TEMPO_C=["Easy effort, steady breathing.","Moderate effort, steady breathing.","Strong brace, steady breathing.","Hard brace, slow and controlled.","Max tension, slowest controlled reps. Form first."];
+const TEMPO_R=["Very gentle: shorter holds.","Gentle holds, slow breathing.","Slow, long holds, easy breathing.","Slightly longer holds; still gentle.","Longest holds; still gentle. Never push into pain."];
 const TEMPO_M=["Gentle: small range. Easier option below.","Easy range, slow breathing.","Smooth, full comfortable range.","Full range, long exhale at end range.","Deepest comfortable range, long exhales. Never forced."];
 function vr(id,L){const ex=EX[id];let o=null;if(ex.v){if(L<3){for(let l=L;l<3;l++)if(ex.v[l]){o=ex.v[l];break;}}else if(L>3){for(let l=L;l>3;l--)if(ex.v[l]){o=ex.v[l];break;}}}const r=Object.assign({},ex,o||{});r.id=id;r.lvl=L;return r;}
-function scale(ex,work,rest,L){const s=ex.kind!=="m";const wm=s?[.85,.92,1,1.1,1.2][L-1]:[1,1,1,1.05,1.1][L-1];const w=Math.max(20,Math.round(work*wm/5)*5);let r=rest;
+function scale(ex,work,rest,L){if(ex.kind==="r")return [Math.round(work*[.92,.96,1,1.04,1.08][L-1]),rest];const s=ex.kind!=="m";const wm=s?[.85,.92,1,1.1,1.2][L-1]:[1,1,1,1.05,1.1][L-1];const w=Math.max(20,Math.round(work*wm/5)*5);let r=rest;
  if(rest>0){r=s?[rest+10,rest+5,rest,Math.max(5,rest*.7),Math.max(5,rest*.5)][L-1]:[rest+5,rest,rest,rest,rest][L-1];r=Math.round(r/5)*5;}return [w,r];}
 const VIEW={top:"view from above",front:"front view",side:"side view"};
 
@@ -615,7 +642,7 @@ function musicPause(){try{MUS.el.pause()}catch(e){}Live.stop();}
 function musicStop(){MUS.want=false;musicPause();hideChip();setSession("auto");}
 chip.addEventListener("click",()=>{if(!set.music){set.music=true;save();syncBar();}musicPlay();});
 function unlock(e){ensureAudio();
- if(e&&e.target&&e.target.closest&&e.target.closest("#go,#plusBtn,#abBtn,#chip,#musicBtn,#pauseBtn"))return; // these start music themselves
+ if(e&&e.target&&e.target.closest&&e.target.closest("#go,#plusBtn,#abBtn,#backBtn2,#chip,#musicBtn,#pauseBtn"))return; // these start music themselves
  if(MUS.unlocked||MUS.live||MUS.want||!MUS.el.paused)return;
  const el=MUS.el;if(!el.src&&MUS.silent)el.src=MUS.silent;if(!el.src)return;el.muted=true;let p;try{p=el.play();}catch(e){el.muted=false;return;}
  if(p&&p.then)p.then(()=>{MUS.unlocked=true;if(!MUS.want){el.pause();try{el.currentTime=0}catch(e){}}el.muted=false;}).catch(()=>{el.muted=false;});else{MUS.unlocked=true;if(!MUS.want)el.pause();el.muted=false;}}
@@ -683,7 +710,7 @@ let W=null,RUN=null;const RING=276.46;
 function show(id){["start","play","done"].forEach(s=>$("#"+s).classList.toggle("hidden",s!==id));window.scrollTo(0,0);}
 function primeSpeech(){if("speechSynthesis" in window&&set.cues){try{const u=new SpeechSynthesisUtterance(" ");u.volume=0;speechSynthesis.speak(u);}catch(e){}}}
 function startBlock(mode){
- const L=RUN.lvl,list=mode==="main"?SESS[RUN.day][RUN.len]:mode==="bonus"?BONUS[RUN.day]:ABS;
+ const L=RUN.lvl,list=mode==="main"?SESS[RUN.day][RUN.len]:mode==="bonus"?BONUS[RUN.day]:mode==="back"?LOWBACK:ABS;
  W={mode,it:build(list,L),i:0,phase:null,el:0,dur:0,last:performance.now(),paused:false,done:false,moved:0,skipped:0,mi:Math.floor(Math.random()*MOTI.length)};
  $("#prog").innerHTML=W.it.map(()=>"<i></i>").join("");show("play");enter("lead",0);}
 $("#go").onclick=()=>{
@@ -694,7 +721,9 @@ $("#go").onclick=()=>{
 function addon(mode){ensureAudio();if(set.music&&(MUS.el.paused||!MUS.want))musicPlay();primeSpeech();wake();startBlock(mode);}
 $("#plusBtn").onclick=()=>addon("bonus");
 $("#abBtn").onclick=()=>addon("abs");
-const blockName=m=>m==="main"?"":m==="bonus"?"+5 bonus":"Ab Blast";
+$("#backBtn2").onclick=()=>addon("back");
+const ADDON={bonus:"+5 min",abs:"Ab Blast",back:"Low-Back Relief"};
+const blockName=m=>m==="main"?"":m==="bonus"?"+5 bonus":ADDON[m];
 function enter(ph,i){
  W.phase=ph;W.i=i;W.el=0;W.last=performance.now();W.lastSec=null;W.half=false;
  const x=W.it[i],isRest=ph==="rest",showX=isRest?W.it[i+1]:x,e=showX.ex,L=RUN.lvl;
@@ -705,17 +734,17 @@ function enter(ph,i){
  $("#countLbl").textContent=`${(isRest?i+2:i+1)} / ${W.it.length}`;
  $("#exName").textContent=isRest?"Rest":e.name;
  $("#exMeta").textContent=isRest?`Up next: ${e.name}`:metaTxt(x);
- $("#exTempo").textContent=`${LVL[L-1]} · `+(e.kind==="s"?TEMPO_S:e.kind==="c"?TEMPO_C:TEMPO_M)[L-1];
+ $("#exTempo").textContent=`${LVL[L-1]} · `+(e.kind==="s"?TEMPO_S:e.kind==="c"?TEMPO_C:e.kind==="r"?TEMPO_R:TEMPO_M)[L-1];
  $("#cues").innerHTML=e.cues.map(c=>`<li>${c}</li>`).join("");
  const easyFirst=L===1&&e.kind==="m"&&e.easier;
- $("#notes").innerHTML=(easyFirst?`<p class="hl"><b>Today's easier option:</b> ${e.easier}</p>`:e.easier?`<p><b>Easier:</b> ${e.easier}</p>`:"")+(e.harder&&L<=3?`<p><b>Harder:</b> ${e.harder}</p>`:"")+(e.note?`<p><b>Note:</b> ${e.note}</p>`:"")+(e.as?`<p><b>AS note:</b> ${e.as}</p>`:"");
+ $("#notes").innerHTML=(e.kind==="r"?`<p class="hl"><b>Safety:</b> ${SAFE}</p>`:"")+(easyFirst?`<p class="hl"><b>Today's easier option:</b> ${e.easier}</p>`:e.easier?`<p><b>Easier:</b> ${e.easier}</p>`:"")+(e.harder&&L<=3?`<p><b>Harder:</b> ${e.harder}</p>`:"")+(e.note?`<p><b>Note:</b> ${e.note}</p>`:"")+(e.as?`<p><b>AS note:</b> ${e.as}</p>`:"");
  if(ph==="lead"){W.mi=(W.mi+1)%MOTI.length;$("#moti").textContent=MOTI[W.mi];}
  if(isRest)$("#moti").textContent=RESTL[i%RESTL.length];
  const nx=isRest?W.it[i+2]:W.it[i+1];
  $("#nextBox").classList.toggle("hidden",!nx);if(nx){buildFig($("#nextFig"),nx.ex);$("#nextName").textContent=nx.ex.name+` · ${nx.work}s`;}
  $("#lead").classList.toggle("hidden",ph!=="lead");
  [...$("#prog").children].forEach((el,j)=>{el.className=j<i||(j===i&&isRest)?"d":j===i?"c":"";});
- if(ph==="lead"){const last=i===W.it.length-1;say(`${i===0&&W.mode==="abs"?"Ab blast. ":""}${last?"Last one. ":""}${x.ex.name}. ${x.work} seconds${x.ex.sided?", switch sides halfway":""}.`);}
+ if(ph==="lead"){const last=i===W.it.length-1;say(`${i===0&&W.mode==="abs"?"Ab blast. ":""}${i===0&&W.mode==="back"?"Low back relief. Stay in a pain-free range. ":""}${last?"Last one. ":""}${x.ex.name}. ${x.work} seconds${x.ex.sided?", switch sides halfway":""}.`);}
  if(ph==="work")beep(990,.18,.4);
  if(isRest&&x.rest>=10)say("Rest.");
  update();}
@@ -747,21 +776,17 @@ $("#endBtn").onclick=()=>{if(!W)return;
 function saveRun(){const log=getLog();const mins=Math.round(RUN.moved/6)/10;
  const entry={id:RUN.entryId||Date.now(),date:ymd(new Date()),session:RUN.title,length:`${LEN[RUN.len]} (${RUN.len} min)`,intensity:`${RUN.lvl} · ${LVL[RUN.lvl-1]}`,addons:RUN.addons.slice(),minutes:mins,moved:Math.round(RUN.moved),at:new Date().toISOString()};
  RUN.entryId=entry.id;const k=log.findIndex(x=>x.id===entry.id);if(k>=0)log[k]=entry;else log.push(entry);LS.set("vm.log",log.slice(-400));return log;}
-function finish(){W.done=true;RUN.moved+=W.moved;if(W.mode!=="main")RUN.addons.push(W.mode==="bonus"?"+5 min":"Ab Blast");
+function finish(){W.done=true;RUN.moved+=W.moved;if(W.mode!=="main")RUN.addons.push(ADDON[W.mode]);
  saveRun();showDone(true);chime();
- const st=streak();say(W.mode==="main"?`Nice work. ${st} day streak.`:W.mode==="abs"?"Ab blast done. Strong finish.":"Bonus block done.");}
+ const st=streak();say(W.mode==="main"?`Nice work. ${st} day streak.`:W.mode==="abs"?"Ab blast done. Strong finish.":W.mode==="back"?"Low back relief done. Nice and easy.":"Bonus block done.");}
 function showDone(fresh){const log=getLog(),st=streak();
  $("#dStreak").textContent=st;$("#dTime").textContent=fmt(RUN.moved);
  $("#dTitle").textContent=RUN.addons.length?"Nice, extra work done":"Session complete";
  $("#dSub").textContent=`${RUN.title} · ${LEN[RUN.len]} · ${LVL[RUN.lvl-1]}${RUN.addons.length?" · + "+RUN.addons.join(", "):""} · logged ✓`;
  if(fresh)$("#dLine").textContent=DONEL[Math.floor(Math.random()*DONEL.length)];
  const days=new Set(log.map(x=>x.date));let wk="";for(let k=6;k>=0;k--){const d=new Date();d.setDate(d.getDate()-k);wk+=`<div><i class="${days.has(ymd(d))?"y":""}"></i>${"SMTWTFS"[d.getDay()]}</div>`;}$("#dWeek").innerHTML=wk;
- const hasB=RUN.addons.includes("+5 min"),hasA=RUN.addons.includes("Ab Blast");
- $("#plusBtn").classList.toggle("hidden",hasB);$("#abBtn").classList.toggle("hidden",hasA);
- $("#addons").style.gridTemplateColumns=hasA||hasB?"1fr":"1fr 1fr";
- $("#addons").classList.toggle("hidden",hasA&&hasB);$("#addHint").classList.toggle("hidden",hasA&&hasB);
- $("#addHint").textContent=RUN.addons.length?"Want to keep going?":"Got a few more minutes?";
- $("#plusSub").textContent=`${SESS[RUN.day].t} · ${LVL[RUN.lvl-1]}`;$("#abSub").textContent=`AS-friendly core · ${LVL[RUN.lvl-1]}`;
+ $("#addHint").textContent=RUN.addons.length?`Add-ons so far: ${RUN.addons.join(", ")}. Keep going?`:"Got a few more minutes?";
+ $("#plusSub").textContent=`${SESS[RUN.day].t} · ${LVL[RUN.lvl-1]}`;$("#abSub").textContent=`AS-friendly core · ${LVL[RUN.lvl-1]}`;$("#backSub").textContent="Gentle · any level";
  $("#dLog").innerHTML="<b style='color:var(--tx)'>Recent</b>"+log.slice(-6).reverse().map(x=>`<div>${x.date} · ${x.session} · ${x.length}${x.intensity?" · "+x.intensity.split(" · ")[1]:""}${x.addons&&x.addons.length?" · + "+x.addons.join(", "):""}${x.moved!=null?` · ${fmt(x.moved)} moving`:""}</div>`).join("");
  show("done");unwake();}
 $("#doneBtn").onclick=()=>{musicStop();W=null;RUN=null;renderStart();show("start");};
