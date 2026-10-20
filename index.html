@@ -113,6 +113,21 @@ h1{font-size:30px;margin:6px 0 2px}
 .prop{fill:#223040;stroke:#34465a;stroke-width:2}
 .wallb{fill:#141d27}
 .mat{fill:#121b25;stroke:#223040;stroke-width:2}
+.inten{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px 14px;margin-bottom:14px}
+.ihead{display:flex;justify-content:space-between;align-items:baseline;font-size:15px;color:var(--mu);font-weight:600}
+.ihead b{font-size:20px;color:var(--tx)}
+#inten{width:100%;height:44px;accent-color:var(--ac);margin:4px 0 0}
+.iticks{display:flex;justify-content:space-between;font-size:12px;color:var(--mu);padding:0 2px}
+.iticks span.on{color:var(--ac);font-weight:700}
+.idesc{font-size:13px;color:var(--mu);margin-top:6px;line-height:1.35}
+#exTempo{color:var(--mu);font-size:14px;margin-top:2px}
+.notes .hl{background:rgba(110,231,183,.1);border-left:3px solid var(--ac);padding:4px 8px;border-radius:4px;color:var(--tx)}
+#chip{position:fixed;top:calc(68px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);z-index:30;height:48px;padding:0 20px;border-radius:24px;background:var(--rest);color:#2a1c00;font-weight:800;font-size:16px;box-shadow:0 6px 24px rgba(0,0,0,.5)}
+.addons{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 0 12px}
+.btn2{height:76px;border-radius:18px;background:var(--card2);border:2px solid var(--ac);color:var(--ac);font-size:18px;font-weight:800;line-height:1.15;padding:6px}
+.btn2 small{display:block;font-size:12px;font-weight:600;color:var(--mu);margin-top:2px}
+.btn2.ab{border-color:var(--rest);color:var(--rest)}
+.addhint{color:var(--mu);font-size:13px;margin:0 0 8px}
 </style>
 </head>
 <body>
@@ -122,12 +137,20 @@ h1{font-size:30px;margin:6px 0 2px}
  <input id="vol" type="range" min="0" max="100" aria-label="Music volume">
  <button class="tog" id="cueBtn" aria-label="Voice and beep cues on/off"><span class="ic">🔔</span><span id="cueLbl">Cues</span></button>
 </header>
+<button id="chip" class="hidden">▶ Tap to start music</button>
+<audio id="musicEl" loop preload="auto" playsinline webkit-playsinline></audio>
 
 <main id="start" class="screen">
  <h1 id="sTitle">Today</h1>
  <p class="sub" id="sSub"></p>
  <div class="days" id="days"></div>
  <div class="seg" id="seg"></div>
+ <div class="inten">
+  <div class="ihead"><span>Intensity</span><b id="iLbl">3 · Moderate</b></div>
+  <input id="inten" type="range" min="1" max="5" step="1" aria-label="Intensity 1 to 5">
+  <div class="iticks" id="iticks"><span>Easy</span><span>Light</span><span>Moderate</span><span>Hard</span><span>Max</span></div>
+  <div class="idesc" id="iDesc"></div>
+ </div>
  <div class="streak" id="streak"></div>
  <ul class="list" id="list"></ul>
  <div id="goWrap"><button id="go">GO<small id="goSub"></small></button></div>
@@ -140,6 +163,7 @@ h1{font-size:30px;margin:6px 0 2px}
  <div class="info">
   <h2 id="exName"></h2>
   <div id="exMeta"></div>
+  <div id="exTempo"></div>
   <div class="row">
    <div class="ring"><svg viewBox="0 0 100 100"><circle class="bgc" cx="50" cy="50" r="44" fill="none" stroke-width="8"/><circle id="ringFg" class="fgc" cx="50" cy="50" r="44" fill="none" stroke-width="8" stroke-linecap="round" stroke-dasharray="276.46" stroke-dashoffset="0"/></svg><div class="num"><b id="tNum">0</b><span id="tLbl">sec</span></div></div>
    <div style="flex:1;min-width:0"><ol class="cues" id="cues"></ol></div>
@@ -157,14 +181,19 @@ h1{font-size:30px;margin:6px 0 2px}
 
 <main id="done" class="screen hidden">
  <div class="big">✓</div>
- <h1>Session complete</h1>
+ <h1 id="dTitle">Session complete</h1>
  <p class="sub" id="dSub"></p>
  <div class="stats">
   <div class="stat"><b id="dStreak">1</b><span>day streak</span></div>
-  <div class="stat"><b id="dTime">0:00</b><span>time moving</span></div>
+  <div class="stat"><b id="dTime">0:00</b><span>total time moving</span></div>
  </div>
  <div class="week" id="dWeek"></div>
  <p id="dLine" style="color:#c9d6e2;font-style:italic"></p>
+ <p class="addhint" id="addHint">Got a few more minutes?</p>
+ <div class="addons" id="addons">
+  <button class="btn2" id="plusBtn">+5 min<small id="plusSub"></small></button>
+  <button class="btn2 ab" id="abBtn">5-min Ab Blast<small id="abSub"></small></button>
+ </div>
  <button class="btn" id="doneBtn">Done</button>
  <div class="log" id="dLog"></div>
 </main>
@@ -296,6 +325,128 @@ figure4:{name:"Figure-4 stretch",reps:"hold each side",sided:1,period:8,
  cues:["On your back, cross one ankle over the opposite knee","Hold behind the bottom thigh and draw it in","Let the top knee relax open"],
  easier:"Seated on the couch: ankle over knee, lean forward with a long spine.",as:"Opens the deep hip rotators, often tight with SpA."}
 };
+/* ---------- Intensity variants + Ab Blast moves ---------- */
+const PU_INC_A="h115,58 n106,66 p77,96 e113,87 w120,108 k58,115 a40,134",PU_INC_B="h133,80 n122,86 p86,107 e106,92 w120,108 k63,121 a40,134";
+const WALL_A="h117,47 n112,58 p98,91 e131,62 w150,62 k89,113 a80,134",WALL_B="h135,54 n128,64 p107,95 e136,80 w150,62 k93,115 a80,134";
+const KNEE_A="h136,85 n126,92 p92,116 e127,113 w128,134 k70,132 a46,120",KNEE_B="h142,113 n130,116 p94,126 e114,124 w128,134 k70,132 a46,120";
+const FULL_A="h151,88 n140,92 p96,114 e141,113 w142,134 k68,123 a40,132",FULL_B="h156,116 n144,118 p98,126 e128,124 w142,134 k69,129 a40,132";
+const DEC_A="h162,90 n150,92 p106,98 e151,113 w152,134 k78,102 a50,106",DEC_B="h166,119 n154,118 p108,113 e138,124 w152,134 k79,110 a50,106";
+const BSS_A="h119,28 n118,42 p116,84 e108,62 w116,82 k136,108 a140,134 K98,104 A72,106",BSS_B="h115,52 n114,66 p112,108 e104,86 w112,106 k138,106 a140,134 K92,124 A72,106";
+const SPF_UP="h52,102 n64,108 p107,120 e62,133 w82,133 E86,108 W104,116 k128,126 a150,132",SPF_DN="h52,104 n64,109 p106,131 e62,133 w82,133 E86,110 W104,124 k128,132 a150,132";
+const SPK_UP="h52,101 n64,106 p94,116 e62,133 w82,133 E80,104 W92,112 k122,130 a136,118",SPK_DN="h52,102 n64,108 p96,126 e62,133 w82,133 E80,108 W94,120 k122,130 a136,118";
+const BR_UP="h34,126 n50,126 p92,108 e70,131 w90,132 k116,99 a124,134";
+const HOL="h38,118 n52,122 p92,129";
+const STANCE="h102,32 n100,46 p100,88 k108,110 a114,134 K94,110 A88,134";
+const tapF=b=>[P("",b),P("E154,106 W144,96",b),P("",b),P("e154,106 w144,96",b)];
+const kneeTapF=[P("",KNEE_A),P("E140,104 W130,96",KNEE_A),P("",KNEE_A),P("e140,104 w130,96",KNEE_A)];
+const incTapF=[P("",PU_INC_A),P("E120,76 W112,68",PU_INC_A),P("",PU_INC_A),P("e120,76 w112,68",PU_INC_A)];
+const heelTapF=[P("e52,106 w54,84 k98,103 a122,103",SUP),P("e52,106 w54,84 k108,108 a122,132 K98,103 A122,103",SUP),P("e52,106 w54,84 k98,103 a122,103",SUP),P("e52,106 w54,84 k98,103 a122,103 K108,108 A122,132",SUP)];
+const slbF=[P("e70,131 w90,132 k114,104 a124,134 K116,119 A140,109",SUP),P("h34,126 n50,126 p92,108 e70,131 w90,132 k116,99 a124,134 K116,98 A140,88")];
+const marchF=[P("",BR_UP),P("k104,84 a126,88",BR_UP),P("",BR_UP),P("K104,84 A126,88",BR_UP)];
+const spfHoldF=[P("E64,86 W64,62",SPF_UP),P("E64,84 W64,60 p107,119",SPF_UP)];
+const hol=(x)=>[P(x,HOL),P(x+" n52,121 h38,117",HOL)];
+const MOB=["breath","catcow","thread","openbook","wallangel","lunge","ninety","wgs","child","pec","floss","cobra","sidebend","downdog","twist","figure4","chintuck"];
+MOB.forEach(id=>EX[id].kind="m");
+["bridge","boxsquat","split","pushup"].forEach(id=>EX[id].kind="s");["plank","deadbug","birddog","sideplank","ytw","wallsit"].forEach(id=>EX[id].kind="c");
+const V={
+pushup:{1:{name:"Wall push-up",reps:"10–15 reps",frames:[P(WALL_A),P(WALL_B)],props:["wall150"],cues:["Hands on the wall at chest height, a big step back","Body one straight line; lower chest toward the wall","Press away fully; squeeze the glutes"],easier:"Stand closer to the wall."},
+ 2:{name:"Incline push-up (kitchen counter)",reps:"8–12 reps",cues:["Hands on the counter edge, body one straight line","Lower chest to the edge, elbows ~45°","Press away fully; squeeze the glutes"],easier:"Wall push-up."},
+ 4:{name:"Push-up on fists",reps:"6–12 reps",frames:[P(FULL_A),P(FULL_B)],props:[],cues:["Fists (knuckles down) under shoulders, wrists straight","Body one line; lower until chest is a fist off the floor","Drop to knees the moment form slips"],easier:"Knee push-ups on fists, or back to the couch."},
+ 5:{name:"Decline push-up (feet on couch)",reps:"6–10 reps",frames:[P(DEC_A),P(DEC_B)],props:["couchL"],cues:["Feet on the couch, fists on the floor under shoulders","Lower slowly with a straight body line; no sagging hips","Alternative: archer push-ups (wide hands, shift to one side)"],easier:"Push-ups on fists, feet on the floor."}},
+split:{1:{name:"Supported split squat",reps:"6–8 per side, half depth",cues:["Hold the couch arm or a wall","Lower only halfway, back heel up","Push up through the front heel"],easier:"Even smaller range, or switch to squat-to-couch."},
+ 4:{name:"Bulgarian split squat (couch)",reps:"8–10 per side",frames:[P(BSS_A),P(BSS_B)],props:["couchL"],cues:["Back foot laces-down on the couch, front foot a long stride ahead","Lower straight down until the front thigh is about parallel","Drive through the front heel; torso tall"],easier:"Regular split squat, both feet on the floor."},
+ 5:{name:"Bulgarian split squat, 3-1-1",reps:"10–12 per side",frames:[P(BSS_A),P(BSS_B)],props:["couchL"],cues:["Back foot on the couch, long stance","3s down, 1s pause at the bottom, 1s up","Front heel stays down; torso tall"],easier:"Bulgarian split squat at normal tempo."}},
+boxsquat:{1:{name:"Sit-to-stand (couch)",reps:"8–10 reps, hands can help",cues:["Sit on the couch edge, feet flat and wide","Lean forward and stand up tall","Sit back down slowly, with control"],easier:"Push off your knees with your hands."},
+ 4:{name:"Pause squat over couch",reps:"12–15 reps, 2s hover",cues:["Sit back until you're just above the couch","Hover 2s without touching, then stand","Chest proud, knees out over toes"],easier:"Squat to couch with a light touch."},
+ 5:{name:"Single-leg box squat (couch)",reps:"5–8 per side",sided:1,frames:[P("h104,26 n102,40 p100,82 e116,52 w134,54 k102,108 a100,134 K116,104 A132,124"),P("h108,54 n98,66 p76,106 e114,72 w132,72 k104,106 a102,134 K102,100 A128,100")],cues:["Stand on one leg, other heel just off the floor in front","Sit back slowly to touch the couch, then stand on the same leg","Arms forward for balance; knee tracks over toes"],easier:"Pause squat with both legs."}},
+bridge:{1:{name:"Glute bridge (small range)",reps:"8–10 reps",cues:["Feet flat, hip-width","Lift just a few inches, squeezing the glutes","Lower slowly"],easier:"Just squeeze the glutes without lifting."},
+ 4:{name:"Single-leg bridge",reps:"8–10 per side",sided:1,frames:slbF,cues:["One foot planted, the other leg long","Drive through the planted heel, hips level","Lower slowly; switch at halfway"],easier:"Two-leg bridge with a 3s squeeze."},
+ 5:{name:"Single-leg bridge, 3s hold",reps:"8 per side, 3s squeeze",sided:1,frames:slbF,cues:["One foot planted, the other leg long","Lift, hold 3s at the top, hips level","Lower over 3s; switch at halfway"],easier:"Single-leg bridge without holds."}},
+sideplank:{1:{name:"Side plank on knees (short holds)",reps:"10s holds, repeat",cues:["Forearm down, elbow under shoulder, knees bent","Lift hips for 10s, rest 3s, repeat","Switch at halfway"],easier:"Hips just hovering."},
+ 4:{name:"Side plank on feet",reps:"hold each side",frames:spfHoldF,cues:["Forearm down, elbow under shoulder, feet stacked or staggered","Straight line from ankles to head","Top arm reaches up; switch at halfway"],easier:"Side plank on knees."},
+ 5:{name:"Side plank on feet + top-leg lift",reps:"hold each side",frames:[P("E64,86 W64,62",SPF_UP),P("E64,86 W64,62 K132,114 A154,112",SPF_UP)],cues:["Side plank on feet, top arm up","Slowly lift and lower the top leg","Hips stay high; switch at halfway"],easier:"Side plank on feet, no leg lift."}},
+plank:{1:{name:"Incline forearm plank (couch)",frames:[P("h128,80 n118,86 p84,107 e120,108 w140,108 k62,121 a40,134"),P("h128,80 n118,86 p84,106 e120,108 w140,108 k62,120 a40,134")],props:["couchR"],cues:["Forearms on the couch seat, elbows under shoulders","Walk the feet back until the body is one line","Breathe steadily"],easier:"Hold for shorter bouts."},
+ 2:{name:"Forearm plank on knees",frames:[P("h146,114 n132,118 p101,125 e130,133 w150,133 k76,132 a52,120"),P("h146,114 n132,118 p101,123 e130,133 w150,133 k76,132 a52,120")],cues:["Forearms down, elbows under shoulders, knees down","Straight line from knees to head","Squeeze glutes; breathe"],easier:"Incline forearm plank on the couch."},
+ 4:{name:"Long-lever forearm plank",reps:"hold, max tension",cues:["Elbows a few cm ahead of your shoulders","Squeeze glutes and quads hard, ribs down","Short, strong breaths"],easier:"Regular forearm plank."},
+ 5:{name:"Plank shoulder taps on fists",reps:"slow alternating taps",frames:tapF(FULL_A),period:6,cues:["High plank on fists, feet wide","Tap the opposite shoulder; no hip rocking","Feet closer together = harder"],easier:"Forearm plank, or taps with knees down.",note:"Fists keep the wrists straight."}},
+deadbug:{1:{name:"Dead bug heel taps",reps:"slow alternating taps",frames:heelTapF,cues:["On your back, knees over hips, arms to the ceiling","Lower one heel to tap the floor, knee stays bent","Low back stays down; exhale each tap"],easier:"Feet on the floor; just march."},
+ 2:{name:"Dead bug (legs only)",reps:"6 per side",cues:["Arms to the ceiling stay still","Straighten one leg toward the floor, then return","Low back stays pressed down"],easier:"Heel taps."},
+ 4:{name:"Long-lever dead bug",reps:"6–8 per side, 3s lowering",cues:["Opposite arm and leg reach long and low","Lower over 3s without the back lifting","Exhale fully before each rep"],easier:"Regular dead bug."},
+ 5:{name:"Dead bug, 5s lower + hover",reps:"5 per side",cues:["Lower opposite arm and leg over 5s","Hover 2s just above the floor","Ribs down, back flat the whole time"],easier:"Long-lever dead bug at normal tempo."}},
+birddog:{1:{name:"Bird dog (arm or leg only)",reps:"6 per side",cues:["From all fours, slide one arm forward OR one leg back","Hips level","Return slowly and alternate"],easier:"Just lift a hand or knee 1 cm."},
+ 4:{name:"Bird dog, 5s holds",reps:"5 per side, 5s hold",cues:["Opposite arm and leg long","Hold 5s, hips square","Return slowly, switch"],easier:"Regular bird dog."},
+ 5:{name:"Bird dog, knees hovering",reps:"5 per side, 3s hold",cues:["From all fours, lift both knees 2 cm off the floor","Reach the opposite arm and leg without dropping or twisting","Hold 3s, return, switch"],easier:"Bird dog with 5s holds."}},
+ytw:{1:{name:"Prone Y-T-W (arms only)",reps:"small lifts"},4:{reps:"3s hold each letter"},5:{name:"Prone Y-T-W, 5s holds",reps:"5s hold each letter"}},
+wallsit:{1:{name:"High wall sit",frames:[P("h80,40 n78,54 p78,96 e90,74 w100,92 k100,108 a104,134"),P("h80,39 n78,53 p78,96 e90,74 w100,92 k100,108 a104,134")],cues:["Back on the wall, slide down only a little","Knees over ankles","Breathe"],easier:"Even higher."},
+ 5:{name:"Wall sit + heel lifts",reps:"hold, alternate heel lifts",cues:["Thighs near parallel, back flat on the wall","Lift one heel, then the other, slowly","Keep the hips level"],easier:"Plain wall sit."}}
+};
+Object.keys(V).forEach(id=>EX[id].v=V[id]);
+EX.pushup.easier="Kitchen-counter incline.";EX.pushup.harder="Push-ups on fists (Hard), decline (Max).";
+EX.split.harder="Bulgarian split squat on the couch (Hard).";EX.bridge.harder="Single-leg bridge (Hard).";
+EX.boxsquat.harder="Pause squat (Hard), single-leg (Max).";delete EX.sideplank.harder;
+/* Ab Blast moves */
+Object.assign(EX,{
+hollow:{name:"Hollow hold",kind:"c",reps:"hold, low back down",period:6,frames:hol("e70,118 w92,116 k114,114 a136,100"),
+ cues:["On your back, press the low back into the floor","Lift shoulder blades lightly, arms reach by your hips","Legs long at about 45°; breathe"],
+ easier:"Tuck hollow (knees bent).",note:"It's a hold, not a crunch. If your neck strains, rest your head and keep the legs working.",as:"Short isometric holds only. Skip it if your back or neck flares.",
+ v:{1:{name:"Tuck hollow hold",frames:hol("e70,118 w90,116 k100,104 a118,108"),cues:["Low back pressed down, knees pulled over hips","Shoulder blades just off the floor, arms reach forward","Breathe; hold the shape"],easier:"Head down, just hold the knees up."},
+  2:{name:"Tuck hollow, one leg long",frames:hol("e70,118 w90,116 k100,104 a118,108 K114,114 A136,100")},
+  4:{name:"Hollow hold, arms overhead",frames:hol("e30,114 w10,110 k114,114 a136,100"),cues:["Low back glued down","Arms by the ears, legs long at about 45°","Breathe; lower the legs only as far as the back stays down"],easier:"Arms by your hips."},
+  5:{name:"Full hollow hold",frames:hol("e30,114 w10,110 k118,122 a144,116"),cues:["Arms by the ears, legs long and low","Low back pressed down the entire time","If the back lifts, raise the legs"],easier:"Hollow with legs at 45°."}}},
+taps:{name:"Shoulder taps (knees, fists)",kind:"c",reps:"slow alternating taps",period:6,frames:kneeTapF,
+ cues:["Knees down, fists (knuckles down) under shoulders","Tap the opposite shoulder; no hip rocking","Slow and controlled"],easier:"Incline taps on the couch.",note:"Fists keep the wrists straight. Forearm plank works too.",
+ v:{1:{name:"Incline shoulder taps (couch)",frames:incTapF,props:["couchR"],cues:["Hands or fists on the couch edge, body one line","Tap the opposite shoulder slowly","Feet wide for balance"],easier:"Incline forearm plank hold."},
+  4:{name:"Plank shoulder taps on fists",frames:tapF(FULL_A),cues:["High plank on fists, feet wide","Tap the opposite shoulder; hips square","Squeeze glutes the whole time"],easier:"Knees down."},
+  5:{name:"Shoulder taps, feet together",frames:tapF(FULL_A),cues:["High plank on fists, feet together","Slow taps, 2s per tap, zero hip sway","Glutes and quads tight"],easier:"Feet wider."}}},
+sidedip:{name:"Side plank hip dips (knees)",kind:"c",sided:1,reps:"slow dips, switch at halfway",period:4,frames:[P(SPK_UP),P(SPK_DN)],
+ cues:["Forearm down, elbow under shoulder, knees bent","Lower the hip toward the floor, then lift high","Slow; switch at halfway"],easier:"Just hold the side plank on knees.",
+ v:{1:{name:"Side plank hold (knees)",period:6,frames:[P(SPK_UP),P("p94,115",SPK_UP)],cues:["Forearm down, knees bent","Lift hips and hold","Switch at halfway"],easier:"Hips hovering."},
+  4:{name:"Side plank hip dips (feet)",frames:[P(SPF_UP),P(SPF_DN)],cues:["Side plank on feet, elbow under shoulder","Dip the hip down, then drive it up high","Slow; switch at halfway"],easier:"Hip dips on knees."},
+  5:{name:"Side plank dips + 2s top hold",frames:[P(SPF_UP),P(SPF_DN)],period:5,cues:["Side plank on feet","Dip, then lift and hold 2s at the top","Switch at halfway"],easier:"Hip dips without holds."}}},
+birdhold:{name:"Bird dog, 5s holds",kind:"c",reps:"alternate, 5s holds",period:12,frames:EX.birddog.frames,
+ cues:["Opposite arm and leg long","Hold 5s; hips level, no twisting","Return slowly and switch"],easier:"Arm-only or leg-only holds.",note:"Wrists: fists or forearm.",as:"Anti-rotation work with a neutral spine.",
+ v:{1:{name:"Bird dog holds (arm or leg)",cues:["From all fours, reach one arm OR one leg","Hold 3s; hips level","Alternate"]},
+  4:{name:"Bird dog, 8s holds",reps:"alternate, 8s holds"},
+  5:{name:"Bird dog, knees hovering",reps:"alternate, 5s holds",cues:["Knees 2 cm off the floor","Reach opposite arm and leg; hold 5s","No dropping or twisting"],easier:"Knees down."}}},
+bridgemarch:{name:"Glute-bridge march",kind:"c",reps:"slow alternating marches",period:6,frames:marchF,
+ cues:["Lift into a bridge, hips high","Lift one knee toward your chest without the hips dropping","Alternate slowly; squeeze glutes"],easier:"Bridge hold.",
+ v:{1:{name:"Glute-bridge hold",period:6,frames:[P("",BR_UP),P("p92,110",BR_UP)],cues:["Feet flat, lift the hips","Hold, squeezing glutes","Breathe"],easier:"Lower bridge."},
+  4:{name:"Bridge march, 2s per lift",period:8},
+  5:{name:"Single-leg bridge holds",sided:1,frames:slbF,period:7,cues:["One leg long, lift through the planted heel","Hold 3s at the top, hips level","Switch at halfway"],easier:"Bridge march."}}},
+revcrunch:{name:"Slow reverse crunch",kind:"c",reps:"6–8 reps, 4s lowering",period:6,
+ frames:[P("e70,131 w90,132 k98,103 a122,103",SUP),P("p98,120 c74,128 e70,131 w90,132 k92,96 a114,90",SUP)],
+ cues:["On your back, knees over hips, arms on the floor","Curl the hips an inch off the floor using the abs, not momentum","Lower over 4s"],easier:"Bent-knee leg lowers.",as:"Small, slow, unloaded. No swinging. If it irritates your back, do dead bugs instead.",
+ v:{1:{name:"Bent-knee leg lowers",frames:heelTapF,cues:["Knees over hips, low back down","Lower one heel to the floor, return, switch","Exhale as you lower"],easier:"Feet on the floor; march."},
+  5:{name:"Reverse crunch, 5s lowering",reps:"6–8 reps, 5s lowering"}}},
+pallof:{name:"Wall Pallof press (iso)",kind:"c",sided:1,reps:"5s presses, switch at halfway",period:7,
+ frames:[P("e98,66 w114,58",STANCE),P("e122,48 w142,48",STANCE)],
+ cues:["Stand side-on to a wall or door frame, feet hip-width, knees soft","Hands together at the chest, press straight out, side of the hands pushing into the wall","Brace and resist turning for 5s; return and repeat"],
+ easier:"Palms pressed together, no wall.",as:"Anti-rotation, with the spine staying still.",
+ v:{1:{name:"Palm-press hold (no wall)",cues:["Feet hip-width, palms pressed hard together at the chest","Push the hands straight out and back slowly","Ribs down, breathe"]},
+  4:{name:"Wall Pallof press, split stance"},
+  5:{name:"Wall Pallof press, half-kneeling, 10s holds",reps:"10s presses",cues:["Half-kneel side-on to the wall","Press out and push sideways into the wall hard for 10s","Hips and ribs don't turn"]}}}
+});
+const ABS=[["deadbug",35,10],["hollow",25,10],["taps",30,5],["sidedip",40,10],["birdhold",30,5],["bridgemarch",30,10],["revcrunch",25,5],["pallof",30,0]];
+const BONUS=[
+ [["pushup",40,15],["ytw",40,15],["pushup",40,15],["wallangel",40,10],["pec",40,0]],
+ [["boxsquat",45,15],["split",60,15],["bridge",45,15],["wallsit",40,10],["lunge",40,0]],
+ [["birddog",45,10],["sideplank",50,10],["deadbug",45,10],["cobra",40,5],["sidebend",40,0]],
+ [["wgs",50,5],["boxsquat",45,15],["pushup",40,15],["lunge",50,5],["birddog",45,0]],
+ [["boxsquat",45,15],["pushup",40,15],["split",60,15],["plank",35,10],["bridge",45,0]],
+ [["downdog",40,5],["wgs",60,5],["ninety",50,5],["floss",50,5],["figure4",50,0]],
+ [["breath",60,5],["catcow",45,5],["openbook",50,5],["twist",50,5],["child",50,0]]];
+const LVL=["Easy","Light","Moderate","Hard","Max"];
+const LDESC=["Easiest variations (wall push-ups, sit-to-stands, heel taps), +10s rest on strength moves, slow tempo, lower reps. Mobility: gentle, small range.",
+ "Easier variations (counter push-ups, supported split squats), +5s rest, smooth tempo.",
+ "Standard variations and rest. Same as the original set.",
+ "Harder variations: push-ups on fists, Bulgarian split squats, side plank on feet, single-leg bridges. About 30% less rest, longer work, higher reps.",
+ "Hardest variations: decline push-ups, single-leg box squats, shoulder taps, 3-1-1 Bulgarians. Half rest, +20% work. Quality reps only."];
+const TEMPO_S=["Tempo: slow and comfortable. Stop well before tired.","Tempo: smooth, 2s down, 2s up.","Tempo: 3s down, 1s up.","Tempo: 3s down, pause, strong up.","Tempo: 3s down, pause, drive up. Near your limit, with clean form."];
+const TEMPO_C=["Easy effort, steady breathing.","Moderate effort, steady breathing.","Strong brace, steady breathing.","Hard brace, slow and controlled.","Max tension, slowest controlled reps. Form first."];
+const TEMPO_M=["Gentle: small range. Easier option below.","Easy range, slow breathing.","Smooth, full comfortable range.","Full range, long exhale at end range.","Deepest comfortable range, long exhales. Never forced."];
+function vr(id,L){const ex=EX[id];let o=null;if(ex.v){if(L<3){for(let l=L;l<3;l++)if(ex.v[l]){o=ex.v[l];break;}}else if(L>3){for(let l=L;l>3;l--)if(ex.v[l]){o=ex.v[l];break;}}}const r=Object.assign({},ex,o||{});r.id=id;r.lvl=L;return r;}
+function scale(ex,work,rest,L){const s=ex.kind!=="m";const wm=s?[.85,.92,1,1.1,1.2][L-1]:[1,1,1,1.05,1.1][L-1];const w=Math.max(20,Math.round(work*wm/5)*5);let r=rest;
+ if(rest>0){r=s?[rest+10,rest+5,rest,Math.max(5,rest*.7),Math.max(5,rest*.5)][L-1]:[rest+5,rest,rest,rest,rest][L-1];r=Math.round(r/5)*5;}return [w,r];}
 const VIEW={top:"view from above",front:"front view",side:"side view"};
 
 /* ---------- Sessions (Mon..Sun) ---------- */
@@ -336,16 +487,6 @@ const MOTI=["Slow is smooth. Smooth is strong.","Breathe low and wide.","Quality
 const RESTL=["Shake it out.","Easy breath. Next one's coming.","Loosen the shoulders.","Nice. Reset your posture."];
 const DONEL=["That's the day's deposit made.","Spine moved, muscles woke up, done before breakfast.","Small sessions, big compounding.","Good work. Carry that posture into the day."];
 
-/* ---------- Storage ---------- */
-const LS={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
-const set=Object.assign({music:true,vol:55,cues:true,len:10},LS.get("vm.settings",{}));
-const save=()=>LS.set("vm.settings",set);
-const pad=n=>String(n).padStart(2,"0");
-const ymd=d=>d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
-function getLog(){return LS.get("vm.log",[])}
-function streak(){const s=new Set(getLog().map(x=>x.date));const d=new Date();if(!s.has(ymd(d)))d.setDate(d.getDate()-1);let n=0;while(s.has(ymd(d))){n++;d.setDate(d.getDate()-1);}return n;}
-const fmt=s=>{s=Math.max(0,Math.round(s));return Math.floor(s/60)+":"+pad(s%60)};
-
 /* ---------- Figures ---------- */
 const NS="http://www.w3.org/2000/svg";
 function propsSVG(ex){let s="";const v=ex.view||"side";
@@ -356,6 +497,7 @@ function propsSVG(ex){let s="";const v=ex.view||"side";
   if(p==="couchR")s+='<rect x="108" y="109" width="70" height="26" rx="5" class="prop"/><rect x="172" y="78" width="12" height="57" rx="5" class="prop"/>';
   if(p==="door")s+='<rect x="77" y="2" width="8" height="134" rx="2" class="prop"/>';
   if(p==="wall90")s+='<rect x="84" y="0" width="6" height="136" class="prop"/>';
+  if(p==="wall150")s+='<rect x="150" y="0" width="6" height="136" class="prop"/>';
   if(p==="wall70")s+='<rect x="62" y="0" width="6" height="136" class="prop"/>';
  });
  if(v!=="top")s+='<line x1="4" y1="136" x2="196" y2="136" class="floor"/>';
@@ -378,75 +520,144 @@ function poseAt(ex,t,frac){const f=ex.frames;if(f.length<2)return f[0];
  if(ex.sync&&frac!=null){return mix(f[0],f[1],Math.min(1,Math.max(0,(frac-.46)/.08)));}
  const per=ex.period*1000,ph=((t%per)/per)*f.length,i=Math.floor(ph);return mix(f[i],f[(i+1)%f.length],ease(ph-i));}
 
-/* ---------- Audio: beeps + procedural music ---------- */
-let ctx=null,beepG=null,musicG=null,duckG=null;
-function ensureAudio(){
- if(ctx){if(ctx.state==="suspended")ctx.resume();return;}
- const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
- ctx=new AC();
- const comp=ctx.createDynamicsCompressor();comp.threshold.value=-14;comp.ratio.value=4;comp.connect(ctx.destination);
- beepG=ctx.createGain();beepG.gain.value=.5;beepG.connect(ctx.destination);
- duckG=ctx.createGain();duckG.connect(comp);
- musicG=ctx.createGain();musicG.gain.value=0;musicG.connect(duckG);
- Music.init();
-}
-function beep(f=660,d=.12,v=.35,t0=0){if(!ctx||!set.cues)return;const t=ctx.currentTime+t0,o=ctx.createOscillator(),g=ctx.createGain();o.type="sine";o.frequency.value=f;g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(v,t+.01);g.gain.exponentialRampToValueAtTime(0.0001,t+d);o.connect(g);g.connect(beepG);o.start(t);o.stop(t+d+.05);}
-const chime=()=>{beep(784,.25,.3);beep(988,.25,.3,.16);beep(1319,.45,.28,.32)};
+/* ---------- Storage ---------- */
+const LS={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+const set=Object.assign({music:true,vol:60,cues:true,len:10,lvl:3},LS.get("vm.settings",{}));
+const save=()=>LS.set("vm.settings",set);
+const pad=n=>String(n).padStart(2,"0");
+const ymd=d=>d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+function getLog(){return LS.get("vm.log",[])}
+function streak(){const s=new Set(getLog().map(x=>x.date));const d=new Date();if(!s.has(ymd(d)))d.setDate(d.getDate()-1);let n=0;while(s.has(ymd(d))){n++;d.setDate(d.getDate()-1);}return n;}
+const fmt=s=>{s=Math.max(0,Math.round(s));return Math.floor(s/60)+":"+pad(s%60)};
+
+/* ---------- Music synth (shared by offline render + live fallback) ---------- */
 const mtof=m=>440*Math.pow(2,(m-69)/12);
-const BPM=116,SP=60/BPM/4;
-const CH=[{r:41,n:[57,60,64,67]},{r:40,n:[55,59,62,64]},{r:38,n:[53,57,60,64]},{r:36,n:[52,55,59,62]}];
-const MEL=[[[0,81],[6,79],[10,76]],[[0,79],[4,76],[10,74],[14,76]],[[2,74],[6,72],[10,74],[12,76]],[[0,72],[8,67],[14,69]]];
-const Music={on:false,timer:null,init(){
- const c=ctx;this.noise=c.createBuffer(1,c.sampleRate,c.sampleRate);const d=this.noise.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
- this.bus=c.createBiquadFilter();this.bus.type="lowpass";this.bus.frequency.value=7000;this.bus.connect(musicG);
- const L=Math.floor(c.sampleRate*2.2),ir=c.createBuffer(2,L,c.sampleRate);for(let ch=0;ch<2;ch++){const x=ir.getChannelData(ch);for(let i=0;i<L;i++)x[i]=(Math.random()*2-1)*Math.pow(1-i/L,3);}
- this.rev=c.createConvolver();this.rev.buffer=ir;const rg=c.createGain();rg.gain.value=.3;this.rev.connect(rg);rg.connect(this.bus);
- this.dl=c.createDelay(1);this.dl.delayTime.value=SP*3;const fb=c.createGain();fb.gain.value=.3;const dg=c.createGain();dg.gain.value=.35;this.dl.connect(fb);fb.connect(this.dl);this.dl.connect(dg);dg.connect(this.bus);
-},
-level(){return .55*(set.vol/100)},
-start(){if(!ctx||this.on)return;this.on=true;clearInterval(this.timer);this.step=0;this.nt=ctx.currentTime+.08;const g=musicG.gain,t=ctx.currentTime;g.cancelScheduledValues(t);g.setValueAtTime(g.value,t);g.linearRampToValueAtTime(this.level(),t+1.5);this.timer=setInterval(()=>this.sched(),25);},
-stop(){if(!ctx||!this.on)return;this.on=false;const g=musicG.gain,t=ctx.currentTime;g.cancelScheduledValues(t);g.setValueAtTime(g.value,t);g.linearRampToValueAtTime(0,t+.6);setTimeout(()=>{if(!this.on)clearInterval(this.timer)},700);},
-setVol(){if(ctx&&this.on){const t=ctx.currentTime;musicG.gain.cancelScheduledValues(t);musicG.gain.setTargetAtTime(this.level(),t,.05);}},
-sched(){while(this.nt<ctx.currentTime+.15){this.play(this.step,this.nt);this.step++;this.nt+=SP;}},
-env(g,t,v,a,d){g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(v,t+a);g.gain.exponentialRampToValueAtTime(0.0001,t+d);},
-nz(t,type,f,q,v,d,send){const c=ctx,s=c.createBufferSource();s.buffer=this.noise;const fl=c.createBiquadFilter();fl.type=type;fl.frequency.value=f;fl.Q.value=q;const g=c.createGain();this.env(g,t,v,.003,d);s.connect(fl);fl.connect(g);g.connect(this.bus);if(send)g.connect(this.rev);s.start(t,Math.random()*.5);s.stop(t+d+.05);},
-osc(t,type,f,v,a,d,dest,det){const o=ctx.createOscillator(),g=ctx.createGain();o.type=type;o.frequency.value=f;if(det)o.detune.value=det;this.env(g,t,v,a,d);o.connect(g);g.connect(dest);o.start(t);o.stop(t+d+.05);return g;},
-play(s,t){const st=s%16,bar=Math.floor(s/16),ch=CH[bar%4],c=ctx;if(st%2)t+=SP*.12;
- const drums=bar%16>=2;
- if(drums&&st%4===0){const o=c.createOscillator(),g=c.createGain();o.frequency.setValueAtTime(140,t);o.frequency.exponentialRampToValueAtTime(45,t+.12);this.env(g,t,.75,.004,.38);o.connect(g);g.connect(this.bus);o.start(t);o.stop(t+.45);}
- if(drums&&(st===4||st===12))this.nz(t,"bandpass",1700,.8,.28,.18,true);
- if(st%4===2)this.nz(t,"highpass",7500,.7,.11,.06);else if(drums&&st%2===1)this.nz(t,"highpass",8500,.7,.035,.03);
- if(bar>=1&&st%4===2){const m=ch.r+(st===14?7:0),lp=c.createBiquadFilter();lp.type="lowpass";lp.frequency.value=650;lp.connect(this.bus);this.osc(t,"triangle",mtof(m+12),.22,.006,.24,lp);this.osc(t,"sine",mtof(m+12),.25,.006,.26,lp);}
- if(st===0||st===6||st===10){const lp=c.createBiquadFilter();lp.type="lowpass";lp.frequency.value=st===0?2400:1700;lp.connect(this.bus);lp.connect(this.rev);ch.n.forEach(m=>{this.osc(t,"triangle",mtof(m),st===0?.05:.035,.008,st===0?.8:.35,lp,-6);this.osc(t,"sine",mtof(m),.03,.008,st===0?.8:.35,lp,6);});}
- if(st===0)ch.n.forEach(m=>{const o=c.createOscillator(),g=c.createGain();o.type="sine";o.frequency.value=mtof(m);g.gain.setValueAtTime(0.0001,t);g.gain.linearRampToValueAtTime(.014,t+.5);g.gain.linearRampToValueAtTime(0.0001,t+SP*16);o.connect(g);g.connect(this.bus);g.connect(this.rev);o.start(t);o.stop(t+SP*16+.05);});
- if(Math.floor(bar/4)%2===1)MEL[bar%4].forEach(([ss,m])=>{if(ss===st){const g=this.osc(t,"sine",mtof(m),.07,.005,.4,this.bus);g.connect(this.dl);g.connect(this.rev);this.osc(t,"triangle",mtof(m),.015,.005,.25,this.bus);}});
-}};
+const BPM=124,SP=60/BPM/4,BEAT=SP*4,LOOP_STEPS=256,LOOP_SEC=LOOP_STEPS*SP;
+// A minor lift: Am - F - C - G
+const CH=[{r:45,n:[57,60,64,69]},{r:41,n:[57,60,65,69]},{r:48,n:[55,60,64,67]},{r:43,n:[55,59,62,67]}];
+const ARP=[0,1,2,3,2,1,3,2];
+function buildSynth(c,out,live){
+ const S={c};const sr=c.sampleRate;
+ S.noise=c.createBuffer(1,sr,sr);const d=S.noise.getChannelData(0);let seed=7;for(let i=0;i<d.length;i++){seed=(seed*16807)%2147483647;d[i]=seed/1073741823.5-1;}
+ const comp=c.createDynamicsCompressor();comp.threshold.value=-16;comp.knee.value=8;comp.ratio.value=3.5;comp.attack.value=.004;comp.release.value=.15;
+ S.bus=c.createBiquadFilter();S.bus.type="lowpass";S.bus.frequency.value=10500;if(live){S.bus.connect(comp);comp.connect(out);}else S.bus.connect(out);
+ const L=Math.floor(sr*1.6),ir=c.createBuffer(2,L,sr);for(let ch=0;ch<2;ch++){const x=ir.getChannelData(ch);for(let i=0;i<L;i++){seed=(seed*16807)%2147483647;x[i]=(seed/1073741823.5-1)*Math.pow(1-i/L,3.2);}}
+ S.rev=c.createConvolver();S.rev.buffer=ir;const rg=c.createGain();rg.gain.value=.22;S.rev.connect(rg);rg.connect(S.bus);
+ S.dl=c.createDelay(1);S.dl.delayTime.value=SP*3;const fb=c.createGain();fb.gain.value=.28;const dg=c.createGain();dg.gain.value=.26;S.dl.connect(fb);fb.connect(S.dl);S.dl.connect(dg);dg.connect(S.bus);
+ return S;}
+function env(g,t,v,a,d){g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(v,t+a);g.gain.exponentialRampToValueAtTime(0.0001,t+d);}
+function nz(S,t,type,f,q,v,d,send){const c=S.c,s=c.createBufferSource();s.buffer=S.noise;const fl=c.createBiquadFilter();fl.type=type;fl.frequency.value=f;fl.Q.value=q;const g=c.createGain();env(g,t,v,.002,d);s.connect(fl);fl.connect(g);g.connect(S.bus);if(send)g.connect(S.rev);s.start(t,(t*7.31)%0.8);s.stop(t+d+.05);}
+function stepM(S,s,t){const c=S.c,st=s%16,bar=Math.floor(s/16)%16,ch=CH[bar%4],beat=st%4===0,brk=bar===15&&st>=8;
+ if(st%2===1)t+=SP*.05;
+ if(beat&&!brk){const o=c.createOscillator(),g=c.createGain();o.frequency.setValueAtTime(165,t);o.frequency.exponentialRampToValueAtTime(48,t+.11);env(g,t,.95,.003,.34);o.connect(g);g.connect(S.bus);o.start(t);o.stop(t+.4);nz(S,t,"highpass",3500,.7,.12,.012);}
+ if(st===4||(st===12&&bar!==15)){nz(S,t,"bandpass",1500,.7,.3,.16,true);nz(S,t+.012,"bandpass",1900,.8,.22,.12,true);}
+ if(bar===15&&st>=8)nz(S,t,"bandpass",1700,.8,.06+(st-8)*.035,.08,true);
+ if(st%4===2)nz(S,t,"highpass",7800,.7,.13,.12);else nz(S,t,"highpass",9000,.7,st%2?.045:.03,.03);
+ if(!brk&&(st%4===2||st%4===3)){const m=ch.r+(st%4===3?12:0),v=st%4===2?.3:.17,lp=c.createBiquadFilter();lp.type="lowpass";lp.Q.value=4;lp.frequency.setValueAtTime(1400,t);lp.frequency.exponentialRampToValueAtTime(260,t+.16);lp.connect(S.bus);
+  const o=c.createOscillator(),g=c.createGain();o.type="sawtooth";o.frequency.value=mtof(m);env(g,t,v,.004,.19);o.connect(g);g.connect(lp);o.start(t);o.stop(t+.24);
+  const sb=c.createOscillator(),sg=c.createGain();sb.type="sine";sb.frequency.value=mtof(m-12);env(sg,t,v*.8,.004,.2);sb.connect(sg);sg.connect(S.bus);sb.start(t);sb.stop(t+.25);}
+ if(beat){const lp=c.createBiquadFilter();lp.type="lowpass";lp.frequency.value=brk?1200:2400;lp.connect(S.bus);lp.connect(S.rev);const pk=brk?.022:.04;
+  ch.n.forEach(m=>[-7,7].forEach(dt=>{const o=c.createOscillator(),g=c.createGain();o.type="sawtooth";o.frequency.value=mtof(m);o.detune.value=dt;g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(pk,t+BEAT*.42);g.gain.linearRampToValueAtTime(pk*.7,t+BEAT*.9);g.gain.linearRampToValueAtTime(0.0001,t+BEAT*.99);o.connect(g);g.connect(lp);o.start(t);o.stop(t+BEAT);}));}
+ if(bar>=4&&!brk){const n=ch.n[ARP[st%8]]+12+(st%8===3?12:0),o=c.createOscillator(),g=c.createGain(),lp=c.createBiquadFilter();lp.type="lowpass";lp.frequency.value=3200;o.type="square";o.frequency.value=mtof(n);env(g,t,bar<8?.022:.038,.003,.13);o.connect(lp);lp.connect(g);g.connect(S.bus);g.connect(S.dl);g.connect(S.rev);o.start(t);o.stop(t+.16);}
+ if(bar===14&&st===0){const s2=c.createBufferSource();s2.buffer=S.noise;s2.loop=true;const f=c.createBiquadFilter();f.type="bandpass";f.Q.value=1.2;f.frequency.setValueAtTime(400,t);f.frequency.exponentialRampToValueAtTime(7000,t+BEAT*7.5);const g=c.createGain();g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(.07,t+BEAT*7.5);g.gain.linearRampToValueAtTime(0.0001,t+BEAT*8);s2.connect(f);f.connect(g);g.connect(S.bus);s2.start(t);s2.stop(t+BEAT*8);}
+}
+function encodeWav(chs,sr,len){const nc=chs.length,ba=nc*2,ds=len*ba,ab=new ArrayBuffer(44+ds),v=new DataView(ab);let o=0;
+ const ws=x=>{for(let i=0;i<x.length;i++)v.setUint8(o++,x.charCodeAt(i))};const u32=x=>{v.setUint32(o,x,true);o+=4},u16=x=>{v.setUint16(o,x,true);o+=2};
+ ws("RIFF");u32(36+ds);ws("WAVE");ws("fmt ");u32(16);u16(1);u16(nc);u32(sr);u32(sr*ba);u16(ba);u16(16);ws("data");u32(ds);
+ for(let i=0;i<len;i++)for(let c=0;c<nc;c++){let x=chs[c][i];x=x>1?1:x<-1?-1:x;v.setInt16(o,x<0?x*32768:x*32767,true);o+=2;}
+ return new Blob([ab],{type:"audio/wav"});}
+function renderChunk(OAC,sr,s0,n,tail){return new Promise((res,rej)=>{const len=Math.round(n*SP*sr)+tail;let oc;try{oc=new OAC(2,len,sr);}catch(e){return rej(e);}
+ const S=buildSynth(oc,oc.destination,false);for(let s=s0;s<s0+n;s++)stepM(S,s,(s-s0)*SP+.002);
+ let d=false;const fin=b=>{if(!d){d=true;res(b);}};oc.oncomplete=e=>fin(e.renderedBuffer);const p=oc.startRendering();if(p&&p.then)p.then(fin,rej);});}
+// Render the 16-bar loop in 2-bar chunks (render cost grows with nodes x duration), overlap-add tails, wrap the last tail onto the start for a seamless loop.
+async function renderLoop(){const OAC=window.OfflineAudioContext||window.webkitOfflineAudioContext;if(!OAC)throw new Error("no OfflineAudioContext");
+ const sr=32000,loopLen=Math.round(LOOP_SEC*sr),tail=Math.round(1.8*sr),CH_STEPS=32;const L=new Float32Array(loopLen),R=new Float32Array(loopLen);
+ for(let s0=0;s0<LOOP_STEPS;s0+=CH_STEPS){const b=await renderChunk(OAC,sr,s0,CH_STEPS,tail);const off=Math.round(s0*SP*sr),x=b.getChannelData(0),y=b.numberOfChannels>1?b.getChannelData(1):x;
+  for(let i=0;i<b.length;i++){const k=(off+i)%loopLen;L[k]+=x[i];R[k]+=y[i];}}
+ let pk=0;for(let i=0;i<loopLen;i++){const a=Math.max(Math.abs(L[i]),Math.abs(R[i]));if(a>pk)pk=a;}
+ const g=pk>0?1/pk:1,K=Math.tanh(1.5);for(let i=0;i<loopLen;i++){L[i]=Math.tanh(L[i]*g*1.5)/K*.78;R[i]=Math.tanh(R[i]*g*1.5)/K*.78;}
+ return encodeWav([L,R],sr,loopLen);}
+function silentWav(){return encodeWav([new Float32Array(4000)],8000,4000);}
+/* ---------- Audio runtime ---------- */
+let ctx=null,beepG=null,liveG=null;
+const MUS={silent:null,el:document.getElementById("musicEl"),ready:false,want:false,routed:false,gain:null,volOK:true,live:false,duck:1,unlocked:false,url:null,playCalls:0,lastErr:null};
+(()=>{try{const el=MUS.el;el.loop=true;el.volume=.5;MUS.volOK=Math.abs(el.volume-.5)<.01;el.volume=1;}catch(e){MUS.volOK=false}})();
+function setSession(type){try{if(navigator.audioSession)navigator.audioSession.type=type;}catch(e){}}
+function ensureAudio(){ // call synchronously inside a tap
+ const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
+ if(!ctx){try{ctx=new AC();}catch(e){return;}
+  beepG=ctx.createGain();beepG.gain.value=.55;beepG.connect(ctx.destination);
+  liveG=ctx.createGain();liveG.gain.value=0;liveG.connect(ctx.destination);
+  ctx.onstatechange=()=>{if(ctx.state!=="running"&&(MUS.want||W)){try{ctx.resume()}catch(e){}}};}
+ if(ctx.state!=="running"){try{const p=ctx.resume();if(p&&p.catch)p.catch(()=>{});}catch(e){}}
+ try{const b=ctx.createBuffer(1,1,22050),s=ctx.createBufferSource();s.buffer=b;s.connect(ctx.destination);s.start(0);}catch(e){}}
+function musLevel(){return Math.min(1,(set.vol/100)*MUS.duck);}
+function applyVol(){const v=musLevel();
+ if(MUS.routed&&MUS.gain&&ctx)MUS.gain.gain.setTargetAtTime(v,ctx.currentTime,.06);
+ else if(!MUS.live){try{MUS.el.volume=v}catch(e){}}
+ if(MUS.live&&liveG&&Live.on)liveG.gain.setTargetAtTime(v*.8,ctx.currentTime,.06);}
+function route(){ // iOS ignores element.volume, so send it through a GainNode once the context is running
+ if(MUS.volOK||MUS.routed||!ctx||ctx.state!=="running"||!ctx.createMediaElementSource)return;
+ try{const s=ctx.createMediaElementSource(MUS.el);MUS.gain=ctx.createGain();MUS.gain.gain.value=musLevel();s.connect(MUS.gain);MUS.gain.connect(ctx.destination);MUS.routed=true;}catch(e){}}
+const chip=document.getElementById("chip");
+function showChip(t){chip.textContent=t||"▶ Tap to start music";chip.classList.remove("hidden");}
+function hideChip(){chip.classList.add("hidden");}
+function musicPlay(){ // must be called synchronously inside a tap handler
+ MUS.want=true;setSession("playback");ensureAudio();
+ if(MUS.live){Live.start();hideChip();return;}
+ if(!MUS.ready){ // unlock the element now (inside the tap) with a silent loop; the real loop is swapped in when ready
+  showChip("♪ Preparing music…");try{MUS.el.muted=false;if(!MUS.el.src){MUS.el.src=MUS.silent;}MUS.playCalls++;const p=MUS.el.play();if(p&&p.catch)p.catch(()=>{});}catch(e){}return;}
+ applyVol();MUS.el.muted=false;MUS.playCalls++;let p;
+ try{p=MUS.el.play();}catch(e){MUS.lastErr=String(e);showChip();return;}
+ const ok=()=>{hideChip();if(ctx&&ctx.state!=="running"){try{ctx.resume().then(route,()=>{})}catch(e){}}else route();};
+ if(p&&p.then)p.then(ok).catch(e=>{MUS.lastErr=String(e&&e.name||e);if(MUS.want&&W&&!W.paused)showChip();});else ok();}
+function musicPause(){try{MUS.el.pause()}catch(e){}Live.stop();}
+function musicStop(){MUS.want=false;musicPause();hideChip();setSession("auto");}
+chip.addEventListener("click",()=>{if(!set.music){set.music=true;save();syncBar();}musicPlay();});
+function unlock(e){ensureAudio();
+ if(e&&e.target&&e.target.closest&&e.target.closest("#go,#plusBtn,#abBtn,#chip,#musicBtn,#pauseBtn"))return; // these start music themselves
+ if(MUS.unlocked||MUS.live||MUS.want||!MUS.el.paused)return;
+ const el=MUS.el;if(!el.src&&MUS.silent)el.src=MUS.silent;if(!el.src)return;el.muted=true;let p;try{p=el.play();}catch(e){el.muted=false;return;}
+ if(p&&p.then)p.then(()=>{MUS.unlocked=true;if(!MUS.want){el.pause();try{el.currentTime=0}catch(e){}}el.muted=false;}).catch(()=>{el.muted=false;});else{MUS.unlocked=true;if(!MUS.want)el.pause();el.muted=false;}}
+document.addEventListener("touchend",unlock,true);document.addEventListener("click",unlock,true);
+// live Web Audio fallback (only if offline render isn't supported)
+const Live={on:false,S:null,timer:null,start(){if(!ctx||this.on)return;this.on=true;if(!this.S)this.S=buildSynth(ctx,liveG,true);this.step=0;this.nt=ctx.currentTime+.08;liveG.gain.setTargetAtTime(musLevel()*.8,ctx.currentTime,.3);clearInterval(this.timer);this.timer=setInterval(()=>{while(this.nt<ctx.currentTime+.15){stepM(this.S,this.step%LOOP_STEPS,this.nt);this.step++;this.nt+=SP;}},25);},
+ stop(){if(!this.on)return;this.on=false;liveG.gain.setTargetAtTime(0,ctx.currentTime,.1);setTimeout(()=>{if(!this.on)clearInterval(this.timer)},500);}};
+MUS.renderStart=performance.now();
+try{MUS.silent=URL.createObjectURL(silentWav());}catch(e){}
+setTimeout(()=>{renderLoop().then(blob=>{MUS.url=URL.createObjectURL(blob);const wasPlaying=!MUS.el.paused;MUS.el.src=MUS.url;MUS.el.loop=true;MUS.ready=true;MUS.renderMs=Math.round(performance.now()-MUS.renderStart);MUS.bytes=blob.size;
+  if(MUS.want&&!(W&&W.paused)){musicPlay();}else{try{MUS.el.load()}catch(e){}}})
+ .catch(e=>{MUS.live=true;MUS.lastErr="render:"+e;if(MUS.want){Live.start();hideChip();}});},30);
+function beep(f=660,d=.12,v=.35,t0=0){if(!ctx||!set.cues||ctx.state!=="running")return;const t=ctx.currentTime+t0,o=ctx.createOscillator(),g=ctx.createGain();o.type="sine";o.frequency.value=f;g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(v,t+.01);g.gain.exponentialRampToValueAtTime(0.0001,t+d);o.connect(g);g.connect(beepG);o.start(t);o.stop(t+d+.05);}
+const chime=()=>{beep(784,.25,.3);beep(988,.25,.3,.16);beep(1319,.45,.28,.32)};
 /* speech */
 let voice=null;
 function pickVoice(){if(!("speechSynthesis" in window))return;const v=speechSynthesis.getVoices();voice=v.find(x=>/en-US/i.test(x.lang)&&/Samantha|Google US|Aria|Jenny|Natural/i.test(x.name))||v.find(x=>/^en/i.test(x.lang))||null;}
 if("speechSynthesis" in window){pickVoice();speechSynthesis.onvoiceschanged=pickVoice;}
 function say(txt){if(!set.cues||!("speechSynthesis" in window))return;try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(txt);if(voice)u.voice=voice;u.rate=1;u.pitch=1;u.volume=1;
- u.onstart=()=>{if(duckG)duckG.gain.setTargetAtTime(.45,ctx.currentTime,.08)};u.onend=u.onerror=()=>{if(duckG)duckG.gain.setTargetAtTime(1,ctx.currentTime,.3)};speechSynthesis.speak(u);}catch(e){}}
+ u.onstart=()=>{MUS.duck=.4;applyVol();};u.onend=u.onerror=()=>{MUS.duck=1;applyVol();};speechSynthesis.speak(u);setTimeout(()=>{if(!speechSynthesis.speaking&&MUS.duck<1){MUS.duck=1;applyVol();}},6000);}catch(e){}}
 
 /* ---------- Wake lock ---------- */
 let wl=null;
 async function wake(){try{if("wakeLock" in navigator&&!wl){wl=await navigator.wakeLock.request("screen");wl.addEventListener("release",()=>{wl=null});}}catch(e){}}
 function unwake(){try{wl&&wl.release()}catch(e){}wl=null;}
-document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&W&&!W.done)wake();});
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&W&&!W.done){wake();if(MUS.want&&!W.paused&&!MUS.live&&MUS.el.paused){const p=MUS.el.play();if(p&&p.catch)p.catch(()=>showChip());}}});
 
 /* ---------- Top bar ---------- */
 function syncBar(){$("#musicBtn").classList.toggle("on",set.music);$("#musicLbl").textContent=set.music?"On":"Off";
  $("#cueBtn").classList.toggle("on",set.cues);$("#cueLbl").textContent=set.cues?"On":"Off";$("#vol").value=set.vol;}
-$("#musicBtn").onclick=()=>{set.music=!set.music;save();syncBar();if(W&&!W.done){ensureAudio();set.music?Music.start():Music.stop();}else if(!set.music)Music.stop();};
+$("#musicBtn").onclick=()=>{set.music=!set.music;save();syncBar();if(W&&(!W.done||!$("#done").classList.contains("hidden"))&&RUN){if(set.music){if(!W.paused||W.done)musicPlay();}else musicStop();}else if(!set.music)musicStop();};
 $("#cueBtn").onclick=()=>{set.cues=!set.cues;save();syncBar();if(!set.cues&&"speechSynthesis" in window)speechSynthesis.cancel();};
-$("#vol").oninput=e=>{set.vol=+e.target.value;save();Music.setVol();};
+$("#vol").oninput=e=>{set.vol=+e.target.value;save();applyVol();};
 
 /* ---------- Start screen ---------- */
 const q=new URLSearchParams(location.search);
 const todayIdx=(new Date().getDay()+6)%7;
 let dayIdx=todayIdx;{const d=(q.get("day")||"").slice(0,3).toLowerCase();const i=DAYS.findIndex(x=>x.toLowerCase()===d);if(i>=0)dayIdx=i;}
 if([5,10,15].includes(+q.get("len")))set.len=+q.get("len");
-const items=()=>SESS[dayIdx][set.len].map(([id,work,rest])=>({id,work,rest,ex:EX[id]}));
+if([1,2,3,4,5].includes(+q.get("lvl")))set.lvl=+q.get("lvl");
+const build=(list,L)=>list.map(([id,work,rest])=>{const ex=vr(id,L);const [w,r]=scale(ex,work,rest,L);return {id,work:w,rest:r,ex};});
+const items=()=>build(SESS[dayIdx][set.len],set.lvl);
 const total=it=>it.reduce((s,x)=>s+x.work+x.rest+LEAD,0);
 const metaTxt=x=>`${x.work}s · ${x.ex.reps}${x.ex.sided?" · both sides":""}`;
 function renderStart(){
@@ -454,43 +665,58 @@ function renderStart(){
  $("#sTitle").textContent=(dayIdx===todayIdx?"Today · ":DAYS[dayIdx]+" · ")+s.t;
  $("#sSub").textContent=new Date().toLocaleDateString(undefined,{weekday:"long",month:"short",day:"numeric"})+" · quiet, no equipment, no jumping";
  $("#days").innerHTML=DAYS.map((d,i)=>`<button class="day${i===dayIdx?" sel":""}${i===todayIdx?" today":""}" data-i="${i}">${d}</button>`).join("");
- $("#seg").innerHTML=[5,10,15].map(l=>`<button data-l="${l}" class="${l===set.len?"sel":""}"><b>${l} min</b><span>${LEN[l]} · ${fmt(total(SESS[dayIdx][l].map(([id,w,r])=>({work:w,rest:r}))))}</span></button>`).join("");
+ $("#seg").innerHTML=[5,10,15].map(l=>`<button data-l="${l}" class="${l===set.len?"sel":""}"><b>${l} min</b><span>${LEN[l]} · ${fmt(total(build(SESS[dayIdx][l],set.lvl)))}</span></button>`).join("");
+ $("#inten").value=set.lvl;$("#iLbl").textContent=`${set.lvl} · ${LVL[set.lvl-1]}`;$("#iDesc").textContent=LDESC[set.lvl-1];
+ [...$("#iticks").children].forEach((e,i)=>e.classList.toggle("on",i===set.lvl-1));
  const st=streak(),log=getLog(),doneToday=log.some(x=>x.date===ymd(new Date()));
  $("#streak").innerHTML=`<b>🔥 ${st}</b><span>${st===1?"day":"days"} in a row${doneToday?" · done today ✓":st?" · keep it alive today":" · start your streak today"}</span>`;
- $("#list").innerHTML=it.map((x,i)=>`<li><span class="no">${i+1}</span><svg viewBox="0 0 200 150" data-id="${x.id}"></svg><div><div class="nm">${x.ex.name}</div><div class="mt">${metaTxt(x)}${x.rest?` · rest ${x.rest}s`:""}</div></div></li>`).join("");
- $("#list").querySelectorAll("svg").forEach(sv=>buildFig(sv,EX[sv.dataset.id]));
- $("#goSub").textContent=`${LEN[set.len]} · ${it.length} moves · ≈${fmt(total(it))}`;
+ $("#list").innerHTML=it.map((x,i)=>`<li><span class="no">${i+1}</span><svg viewBox="0 0 200 150" data-i="${i}"></svg><div><div class="nm">${x.ex.name}</div><div class="mt">${metaTxt(x)}${x.rest?` · rest ${x.rest}s`:""}</div></div></li>`).join("");
+ $("#list").querySelectorAll("svg").forEach(sv=>buildFig(sv,it[+sv.dataset.i].ex));
+ $("#goSub").textContent=`${LEN[set.len]} · ${LVL[set.lvl-1]} · ${it.length} moves · ≈${fmt(total(it))}`;
 }
 $("#days").onclick=e=>{const b=e.target.closest("button");if(b){dayIdx=+b.dataset.i;renderStart();}};
 $("#seg").onclick=e=>{const b=e.target.closest("button");if(b){set.len=+b.dataset.l;save();renderStart();}};
+$("#inten").oninput=e=>{set.lvl=+e.target.value;save();renderStart();};
 
 /* ---------- Player ---------- */
-let W=null;const RING=276.46;
+let W=null,RUN=null;const RING=276.46;
 function show(id){["start","play","done"].forEach(s=>$("#"+s).classList.toggle("hidden",s!==id));window.scrollTo(0,0);}
-$("#go").onclick=()=>{ensureAudio();if(set.music)Music.start();wake();
- if("speechSynthesis" in window&&set.cues){try{speechSynthesis.speak(new SpeechSynthesisUtterance(""))}catch(e){}}
- W={it:items(),i:0,phase:null,el:0,dur:0,last:performance.now(),paused:false,done:false,moved:0,skipped:0,mi:Math.floor(Math.random()*MOTI.length),startDate:ymd(new Date()),title:DAYS[dayIdx]+" · "+SESS[dayIdx].t,len:set.len};
- $("#prog").innerHTML=W.it.map(()=>"<i></i>").join("");show("play");enter("lead",0);};
+function primeSpeech(){if("speechSynthesis" in window&&set.cues){try{const u=new SpeechSynthesisUtterance(" ");u.volume=0;speechSynthesis.speak(u);}catch(e){}}}
+function startBlock(mode){
+ const L=RUN.lvl,list=mode==="main"?SESS[RUN.day][RUN.len]:mode==="bonus"?BONUS[RUN.day]:ABS;
+ W={mode,it:build(list,L),i:0,phase:null,el:0,dur:0,last:performance.now(),paused:false,done:false,moved:0,skipped:0,mi:Math.floor(Math.random()*MOTI.length)};
+ $("#prog").innerHTML=W.it.map(()=>"<i></i>").join("");show("play");enter("lead",0);}
+$("#go").onclick=()=>{
+ // audio first, synchronously inside the tap
+ ensureAudio();if(set.music)musicPlay();else setSession("ambient");primeSpeech();wake();
+ RUN={day:dayIdx,len:set.len,lvl:set.lvl,title:DAYS[dayIdx]+" · "+SESS[dayIdx].t,moved:0,addons:[],entryId:null};
+ startBlock("main");};
+function addon(mode){ensureAudio();if(set.music&&(MUS.el.paused||!MUS.want))musicPlay();primeSpeech();wake();startBlock(mode);}
+$("#plusBtn").onclick=()=>addon("bonus");
+$("#abBtn").onclick=()=>addon("abs");
+const blockName=m=>m==="main"?"":m==="bonus"?"+5 bonus":"Ab Blast";
 function enter(ph,i){
  W.phase=ph;W.i=i;W.el=0;W.last=performance.now();W.lastSec=null;W.half=false;
- const x=W.it[i],isRest=ph==="rest",showX=isRest?W.it[i+1]:x;
+ const x=W.it[i],isRest=ph==="rest",showX=isRest?W.it[i+1]:x,e=showX.ex,L=RUN.lvl;
  W.dur=ph==="lead"?LEAD:ph==="work"?x.work:x.rest;
  $("#play").classList.toggle("resting",isRest);
- buildFig($("#mainFig"),showX.ex);$("#viewLbl").textContent=VIEW[showX.ex.view||"side"];
- $("#phaseLbl").textContent=isRest?"Rest":ph==="lead"?"Get ready":"Work";
+ buildFig($("#mainFig"),e);$("#viewLbl").textContent=VIEW[e.view||"side"];
+ $("#phaseLbl").textContent=(W.mode!=="main"?blockName(W.mode)+" · ":"")+(isRest?"Rest":ph==="lead"?"Get ready":"Work");
  $("#countLbl").textContent=`${(isRest?i+2:i+1)} / ${W.it.length}`;
- $("#exName").textContent=isRest?"Rest":showX.ex.name;
- $("#exMeta").textContent=isRest?`Up next: ${showX.ex.name}`:metaTxt(x);
- $("#cues").innerHTML=showX.ex.cues.map(c=>`<li>${c}</li>`).join("");
- const e=showX.ex;$("#notes").innerHTML=(e.easier?`<p><b>Easier:</b> ${e.easier}</p>`:"")+(e.harder?`<p><b>Harder:</b> ${e.harder}</p>`:"")+(e.note?`<p><b>Note:</b> ${e.note}</p>`:"")+(e.as?`<p><b>AS note:</b> ${e.as}</p>`:"");
+ $("#exName").textContent=isRest?"Rest":e.name;
+ $("#exMeta").textContent=isRest?`Up next: ${e.name}`:metaTxt(x);
+ $("#exTempo").textContent=`${LVL[L-1]} · `+(e.kind==="s"?TEMPO_S:e.kind==="c"?TEMPO_C:TEMPO_M)[L-1];
+ $("#cues").innerHTML=e.cues.map(c=>`<li>${c}</li>`).join("");
+ const easyFirst=L===1&&e.kind==="m"&&e.easier;
+ $("#notes").innerHTML=(easyFirst?`<p class="hl"><b>Today's easier option:</b> ${e.easier}</p>`:e.easier?`<p><b>Easier:</b> ${e.easier}</p>`:"")+(e.harder&&L<=3?`<p><b>Harder:</b> ${e.harder}</p>`:"")+(e.note?`<p><b>Note:</b> ${e.note}</p>`:"")+(e.as?`<p><b>AS note:</b> ${e.as}</p>`:"");
  if(ph==="lead"){W.mi=(W.mi+1)%MOTI.length;$("#moti").textContent=MOTI[W.mi];}
  if(isRest)$("#moti").textContent=RESTL[i%RESTL.length];
  const nx=isRest?W.it[i+2]:W.it[i+1];
  $("#nextBox").classList.toggle("hidden",!nx);if(nx){buildFig($("#nextFig"),nx.ex);$("#nextName").textContent=nx.ex.name+` · ${nx.work}s`;}
  $("#lead").classList.toggle("hidden",ph!=="lead");
  [...$("#prog").children].forEach((el,j)=>{el.className=j<i||(j===i&&isRest)?"d":j===i?"c":"";});
- if(ph==="lead"){const last=i===W.it.length-1;say(`${last?"Last one. ":""}${x.ex.name}. ${x.work} seconds${x.ex.sided?", switch sides halfway":""}.`);}
- if(ph==="work"){beep(990,.18,.4);}
+ if(ph==="lead"){const last=i===W.it.length-1;say(`${i===0&&W.mode==="abs"?"Ab blast. ":""}${last?"Last one. ":""}${x.ex.name}. ${x.work} seconds${x.ex.sided?", switch sides halfway":""}.`);}
+ if(ph==="work")beep(990,.18,.4);
  if(isRest&&x.rest>=10)say("Rest.");
  update();}
 function advance(){const last=W.i===W.it.length-1;
@@ -509,22 +735,36 @@ function tick(){if(!W||W.done)return;const now=performance.now();if(W.paused){W.
  if(rem<=0){advance();return;}
  update();}
 setInterval(tick,100);
-$("#pauseBtn").onclick=()=>{if(!W)return;W.paused=!W.paused;$("#play").classList.toggle("paused",W.paused);
- $("#pauseIc").innerHTML=W.paused?'<path d="M7 4v16l13-8z"/>':'<path d="M6 5h4v14H6zM14 5h4v14h-4z"/>';
- if(ctx){W.paused?ctx.suspend():ctx.resume();}if(W.paused&&"speechSynthesis" in window)speechSynthesis.cancel();update();};
-function unpause(){if(W.paused){W.paused=false;$("#play").classList.remove("paused");$("#pauseIc").innerHTML='<path d="M6 5h4v14H6zM14 5h4v14h-4z"/>';if(ctx)ctx.resume();}}
-$("#skipBtn").onclick=()=>{if(!W)return;unpause();if(W.phase==="work")W.moved+=W.el;if(W.phase!=="rest")W.skipped++;if(W.phase==="rest"||W.i<W.it.length-1)enter("lead",W.phase==="rest"?W.i+1:W.i+1);else finish();};
+function setPauseUI(){$("#play").classList.toggle("paused",W.paused);$("#pauseIc").innerHTML=W.paused?'<path d="M7 4v16l13-8z"/>':'<path d="M6 5h4v14H6zM14 5h4v14h-4z"/>';}
+$("#pauseBtn").onclick=()=>{if(!W)return;W.paused=!W.paused;setPauseUI();ensureAudio();
+ if(W.paused){if(set.music)musicPause();if("speechSynthesis" in window)speechSynthesis.cancel();}else if(set.music)musicPlay();update();};
+function unpause(){if(W.paused){W.paused=false;setPauseUI();ensureAudio();if(set.music)musicPlay();}}
+$("#skipBtn").onclick=()=>{if(!W)return;unpause();if(W.phase==="work")W.moved+=W.el;if(W.phase!=="rest")W.skipped++;if(W.phase==="rest"||W.i<W.it.length-1)enter("lead",W.i+1);else finish();};
 $("#backBtn").onclick=()=>{if(!W)return;unpause();if(W.phase==="rest")enter("lead",W.i);else if(W.phase==="work"&&W.el>3)enter("lead",W.i);else enter("lead",Math.max(0,W.i-1));};
-$("#endBtn").onclick=()=>{if(!W)return;if(!confirm("End this session? (It won't be logged.)"))return;W.done=true;Music.stop();unwake();if("speechSynthesis" in window)speechSynthesis.cancel();if(ctx&&ctx.state==="suspended")ctx.resume();W=null;renderStart();show("start");};
-function finish(){W.done=true;const log=getLog();
- log.push({date:ymd(new Date()),session:W.title,length:`${LEN[W.len]} (${W.len} min)`,moved:Math.round(W.moved),skipped:W.skipped,at:new Date().toISOString()});LS.set("vm.log",log.slice(-400));
- const st=streak();$("#dStreak").textContent=st;$("#dTime").textContent=fmt(W.moved);
- $("#dSub").textContent=`${W.title} · ${LEN[W.len]} (${W.len} min) · logged ✓`;
- $("#dLine").textContent=DONEL[Math.floor(Math.random()*DONEL.length)];
+$("#endBtn").onclick=()=>{if(!W)return;
+ if(W.mode!=="main"){if(!confirm("End this add-on? Your main session stays logged."))return;W.done=true;if("speechSynthesis" in window)speechSynthesis.cancel();showDone(false);return;}
+ if(!confirm("End this session? (It won't be logged.)"))return;W.done=true;musicStop();unwake();if("speechSynthesis" in window)speechSynthesis.cancel();W=null;RUN=null;renderStart();show("start");};
+function saveRun(){const log=getLog();const mins=Math.round(RUN.moved/6)/10;
+ const entry={id:RUN.entryId||Date.now(),date:ymd(new Date()),session:RUN.title,length:`${LEN[RUN.len]} (${RUN.len} min)`,intensity:`${RUN.lvl} · ${LVL[RUN.lvl-1]}`,addons:RUN.addons.slice(),minutes:mins,moved:Math.round(RUN.moved),at:new Date().toISOString()};
+ RUN.entryId=entry.id;const k=log.findIndex(x=>x.id===entry.id);if(k>=0)log[k]=entry;else log.push(entry);LS.set("vm.log",log.slice(-400));return log;}
+function finish(){W.done=true;RUN.moved+=W.moved;if(W.mode!=="main")RUN.addons.push(W.mode==="bonus"?"+5 min":"Ab Blast");
+ saveRun();showDone(true);chime();
+ const st=streak();say(W.mode==="main"?`Nice work. ${st} day streak.`:W.mode==="abs"?"Ab blast done. Strong finish.":"Bonus block done.");}
+function showDone(fresh){const log=getLog(),st=streak();
+ $("#dStreak").textContent=st;$("#dTime").textContent=fmt(RUN.moved);
+ $("#dTitle").textContent=RUN.addons.length?"Nice, extra work done":"Session complete";
+ $("#dSub").textContent=`${RUN.title} · ${LEN[RUN.len]} · ${LVL[RUN.lvl-1]}${RUN.addons.length?" · + "+RUN.addons.join(", "):""} · logged ✓`;
+ if(fresh)$("#dLine").textContent=DONEL[Math.floor(Math.random()*DONEL.length)];
  const days=new Set(log.map(x=>x.date));let wk="";for(let k=6;k>=0;k--){const d=new Date();d.setDate(d.getDate()-k);wk+=`<div><i class="${days.has(ymd(d))?"y":""}"></i>${"SMTWTFS"[d.getDay()]}</div>`;}$("#dWeek").innerHTML=wk;
- $("#dLog").innerHTML="<b style='color:var(--tx)'>Recent</b>"+log.slice(-6).reverse().map(x=>`<div>${x.date} · ${x.session} · ${x.length}</div>`).join("");
- show("done");chime();say(`Nice work. ${st} day streak.`);unwake();}
-$("#doneBtn").onclick=()=>{Music.stop();W=null;renderStart();show("start");};
+ const hasB=RUN.addons.includes("+5 min"),hasA=RUN.addons.includes("Ab Blast");
+ $("#plusBtn").classList.toggle("hidden",hasB);$("#abBtn").classList.toggle("hidden",hasA);
+ $("#addons").style.gridTemplateColumns=hasA||hasB?"1fr":"1fr 1fr";
+ $("#addons").classList.toggle("hidden",hasA&&hasB);$("#addHint").classList.toggle("hidden",hasA&&hasB);
+ $("#addHint").textContent=RUN.addons.length?"Want to keep going?":"Got a few more minutes?";
+ $("#plusSub").textContent=`${SESS[RUN.day].t} · ${LVL[RUN.lvl-1]}`;$("#abSub").textContent=`AS-friendly core · ${LVL[RUN.lvl-1]}`;
+ $("#dLog").innerHTML="<b style='color:var(--tx)'>Recent</b>"+log.slice(-6).reverse().map(x=>`<div>${x.date} · ${x.session} · ${x.length}${x.intensity?" · "+x.intensity.split(" · ")[1]:""}${x.addons&&x.addons.length?" · + "+x.addons.join(", "):""}${x.moved!=null?` · ${fmt(x.moved)} moving`:""}</div>`).join("");
+ show("done");unwake();}
+$("#doneBtn").onclick=()=>{musicStop();W=null;RUN=null;renderStart();show("start");};
 
 /* ---------- Animation loop ---------- */
 let at=0,lt=performance.now();
@@ -532,8 +772,7 @@ function frame(now){const dt=now-lt;lt=now;if(!(W&&W.paused))at+=dt;
  const m=$("#mainFig");if(m._ex&&!$("#play").classList.contains("hidden")){const frac=W&&W.phase==="work"&&!W.done?W.el/W.dur:(W&&W.phase!=="work"?0:null);drawPose(m,poseAt(m._ex,at,m._ex.sync?frac:null));}
  requestAnimationFrame(frame);}
 requestAnimationFrame(frame);
-
-window.MS={EX,buildFig,drawPose};
+window.MS={renderLoop,EX,vr,buildFig,drawPose,MUS,ABS,BONUS,SESS,get W(){return W},get RUN(){return RUN}};
 syncBar();renderStart();
 })();
 </script>
